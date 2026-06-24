@@ -1,0 +1,186 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": "Episodic",
+      "memory_options": {
+        "max_events": "2000"
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 4,
+          "has_body": true,
+          "name": "argue",
+          "params": [
+            {
+              "default": null,
+              "name": "position",
+              "type": "Str"
+            },
+            {
+              "default": "None",
+              "name": "opponent_arg",
+              "type": "Option<Str>"
+            },
+            {
+              "default": "1",
+              "name": "round",
+              "type": "Int"
+            }
+          ],
+          "return_type": "Result<Argument, AgentError>"
+        }
+      ],
+      "model": "@anthropic/claude-4",
+      "name": "DebaterAgent",
+      "tools": []
+    }
+  ],
+  "capabilities": [
+    {
+      "enabled": true,
+      "name": "declaration_inspection",
+      "reason": "safe parsed declaration summaries are allowed"
+    },
+    {
+      "enabled": false,
+      "name": "method_execution",
+      "reason": "AXON method bodies are not executed yet"
+    },
+    {
+      "enabled": false,
+      "name": "provider_calls",
+      "reason": "model/provider calls require a future provider runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "tool_dispatch",
+      "reason": "real tool dispatch requires a future tool runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "memory_mutation",
+      "reason": "memory writes are not applied by the current runtime plan"
+    },
+    {
+      "enabled": false,
+      "name": "rag_indexing",
+      "reason": "RAG indexing is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "rag_retrieval",
+      "reason": "RAG retrieval is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "flow_execution",
+      "reason": "flow orchestration is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "trace_replay",
+      "reason": "trace replay is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "secret_resolution",
+      "reason": "environment secrets are not resolved by runtime planning"
+    },
+    {
+      "enabled": false,
+      "name": "fastmcp_runtime_import",
+      "reason": "FastMCP is not imported by compiler/runtime planning core"
+    }
+  ],
+  "counts": {
+    "agents": 1,
+    "flows": 1,
+    "imports": 0,
+    "prompts": 0,
+    "rags": 0,
+    "tools": 0,
+    "type_aliases": 2
+  },
+  "flows": [
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "executable": false,
+      "name": "DebatePipeline",
+      "params": [
+        {
+          "default": null,
+          "name": "topic",
+          "type": "Str"
+        },
+        {
+          "default": "3",
+          "name": "rounds",
+          "type": "Int"
+        }
+      ],
+      "return_type": "DebateTranscript",
+      "stages": [
+        {
+          "name": "Pro",
+          "params": [
+            {
+              "default": null,
+              "name": "round",
+              "type": "Int"
+            }
+          ],
+          "return_type": "Argument"
+        },
+        {
+          "name": "Con",
+          "params": [
+            {
+              "default": null,
+              "name": "round",
+              "type": "Int"
+            }
+          ],
+          "return_type": "Argument"
+        },
+        {
+          "name": "Synthesize",
+          "params": [
+            {
+              "default": null,
+              "name": "args",
+              "type": "List<Argument>"
+            }
+          ],
+          "return_type": "DebateTranscript"
+        }
+      ]
+    }
+  ],
+  "imports": [],
+  "notes": [
+    "runtime plan is inspection-only",
+    "all executable capabilities remain disabled by Runtime RFC #001"
+  ],
+  "prompts": [],
+  "rags": [],
+  "source_path": "examples/debate.ax",
+  "tools": [],
+  "type_aliases": [
+    {
+      "field_count": 3,
+      "name": "Argument",
+      "type_params": [],
+      "value": "{ position: Str, content: Str, confidence: Float }"
+    },
+    {
+      "field_count": 3,
+      "name": "DebateTranscript",
+      "type_params": [],
+      "value": "{ topic: Str, rounds: List<Argument>, conclusion: Str }"
+    }
+  ]
+}

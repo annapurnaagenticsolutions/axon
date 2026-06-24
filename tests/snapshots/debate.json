@@ -1,0 +1,164 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": {
+        "kind": "Episodic",
+        "options": {
+          "max_events": "2000"
+        }
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body": "let history = memory.recall_all()\nlet argument = @argue(my_position: position, prior_rounds: history, counter: opponent_arg, round: round)\nstore memory.append(argument)\nOk(argument)",
+          "name": "argue",
+          "params": [
+            {
+              "default": null,
+              "name": "position",
+              "type_str": "Str"
+            },
+            {
+              "default": "None",
+              "name": "opponent_arg",
+              "type_str": "Option<Str>"
+            },
+            {
+              "default": "1",
+              "name": "round",
+              "type_str": "Int"
+            }
+          ],
+          "return_type": "Result<Argument, AgentError>"
+        }
+      ],
+      "model": "anthropic/claude-4",
+      "name": "DebaterAgent",
+      "tools": [],
+      "workers": null
+    }
+  ],
+  "flows": [
+    {
+      "annotations": [],
+      "edges": [
+        {
+          "from_stage": "[Pro, Con]",
+          "to_stage": "Synthesize"
+        }
+      ],
+      "kind": "flow",
+      "name": "DebatePipeline",
+      "params": [
+        {
+          "default": null,
+          "name": "topic",
+          "type_str": "Str"
+        },
+        {
+          "default": "3",
+          "name": "rounds",
+          "type_str": "Int"
+        }
+      ],
+      "return_type": "DebateTranscript",
+      "stages": [
+        {
+          "name": "Pro",
+          "params": [
+            {
+              "default": null,
+              "name": "round",
+              "type_str": "Int"
+            }
+          ],
+          "return_type": "Argument"
+        },
+        {
+          "name": "Con",
+          "params": [
+            {
+              "default": null,
+              "name": "round",
+              "type_str": "Int"
+            }
+          ],
+          "return_type": "Argument"
+        },
+        {
+          "name": "Synthesize",
+          "params": [
+            {
+              "default": null,
+              "name": "args",
+              "type_str": "List<Argument>"
+            }
+          ],
+          "return_type": "DebateTranscript"
+        }
+      ]
+    }
+  ],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [],
+  "metadata": {},
+  "prompts": [],
+  "rags": [],
+  "tools": [],
+  "type_aliases": [
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "position",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "content",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "confidence",
+          "type_str": "Float"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "Argument",
+      "type_params": [],
+      "value": "{\n    position: Str,\n    content: Str,\n    confidence: Float\n}"
+    },
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "topic",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "rounds",
+          "type_str": "List<Argument>"
+        },
+        {
+          "default": null,
+          "name": "conclusion",
+          "type_str": "Str"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "DebateTranscript",
+      "type_params": [],
+      "value": "{\n    topic: Str,\n    rounds: List<Argument>,\n    conclusion: Str\n}"
+    }
+  ],
+  "version": "0.2.0"
+}

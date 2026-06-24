@@ -1,0 +1,14 @@
+{
+  "diagnostics": [
+    {
+      "code": "missing-tool-docstring",
+      "hint": "Add a docstring using /// before the tool body, e.g., /// \"Does something useful.\"",
+      "line": 2,
+      "message": "tool 'T' must include at least one /// docstring line",
+      "related": [],
+      "severity": "error"
+    }
+  ],
+  "kind": "validation",
+  "ok": false
+}

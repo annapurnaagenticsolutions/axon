@@ -1,0 +1,59 @@
+type ActionItem = {
+    owner: Str,
+    task: Str,
+    deadline: Str,
+}
+
+type MeetingNotes = {
+    summary: Str,
+    decisions: List<Str>,
+    action_items: List<ActionItem>,
+}
+
+prompt SummarizeTranscript(transcript: Str, audience: Str = "general", @budget(tokens: 700)) -> Str {
+    """
+    Summarize the meeting transcript for a {audience} audience.
+
+    Transcript:
+    {transcript}
+    """
+}
+
+prompt ExtractActionItems(transcript: Str, @budget(tokens: 500)) -> List<ActionItem> {
+    """
+    Extract action items from this meeting transcript.
+
+    Transcript:
+    {transcript}
+    """
+}
+
+tool TranscribeAudio(audio_path: Str) -> Result<Str, ToolError> {
+    /// Transcribes an audio file into text.
+    /// Use when the meeting input is an audio recording.
+
+    audio.transcribe(audio_path)
+}
+
+tool SaveNotes(title: Str, notes: MeetingNotes) -> Result<Str, ToolError> {
+    /// Saves meeting notes to a workspace page.
+    /// Use after summary, decisions, and action items are extracted.
+
+    notion.save(title, notes)
+}
+
+agent MeetingNotesAgent {
+    model: @anthropic/claude-4
+    tools: [TranscribeAudio, SaveNotes]
+    memory: Memory<Episodic>(max_events: 5000)
+
+    fn process(audio_path: Str, title: Str) -> Result<MeetingNotes, AgentError> {
+        let transcript = act TranscribeAudio(audio_path: audio_path)?
+        let summary = model.complete(SummarizeTranscript(transcript, audience: "engineering"))
+        let action_items = model.complete(ExtractActionItems(transcript))
+        let notes = MeetingNotes { summary, decisions: [], action_items }
+        let url = act SaveNotes(title: title, notes: notes)?
+        store memory.append(url)
+        Ok(notes)
+    }
+}

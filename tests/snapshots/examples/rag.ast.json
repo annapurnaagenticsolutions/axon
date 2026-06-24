@@ -1,0 +1,101 @@
+[
+  {
+    "node": "ImportDecl",
+    "names": [
+      "Chunk"
+    ],
+    "source": "axon:types"
+  },
+  {
+    "node": "RagDecl",
+    "name": "ProductDocs",
+    "source": "\"./knowledge_base/**/*.md\"",
+    "chunker": "Chunker::sliding(size: 512, overlap: 64)",
+    "embedder": "@openai/text-embed-3",
+    "store": "VectorDB::postgres(env.PGVECTOR_URL)",
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "retrieve",
+        "params": [
+          {
+            "node": "Param",
+            "name": "query",
+            "type_str": "Str",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "top_k",
+            "type_str": "Int",
+            "default": "5"
+          }
+        ],
+        "return_type": "List<Chunk>",
+        "annotations": [],
+        "body": "store.search(embed(query), top_k)\n    |> rerank(query, model: @cohere/rerank-3)\n    |> filter(chunk => chunk.score > 0.72)",
+        "parsed_body": null
+      }
+    ],
+    "line": 3
+  },
+  {
+    "node": "ToolDecl",
+    "name": "CreateTicket",
+    "params": [
+      {
+        "node": "Param",
+        "name": "title",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "priority",
+        "type_str": "\"low\" | \"medium\" | \"high\"",
+        "default": "\"medium\""
+      }
+    ],
+    "return_type": "Result<Str, ToolError>",
+    "docstrings": [
+      "Creates a support ticket.",
+      "Use when product documentation does not answer the user's question."
+    ],
+    "body": "http.post(env.TICKET_API, { title, priority })",
+    "annotations": [],
+    "line": 16,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "SupportAgent",
+    "model": "@anthropic/claude-4",
+    "tools": [
+      "ProductDocs.retrieve",
+      "CreateTicket"
+    ],
+    "memory": null,
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "handle",
+        "params": [
+          {
+            "node": "Param",
+            "name": "question",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<Str, AgentError>",
+        "annotations": [],
+        "body": "let context = act ProductDocs.retrieve(query: question)?\nOk(@answer(question, using: context))",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 22
+  }
+]

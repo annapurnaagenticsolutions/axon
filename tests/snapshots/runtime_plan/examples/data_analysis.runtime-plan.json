@@ -1,0 +1,188 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": "ShortTerm",
+      "memory_options": {
+        "capacity": "2000"
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 6,
+          "has_body": true,
+          "name": "analyze",
+          "params": [
+            {
+              "default": null,
+              "name": "csv_path",
+              "type": "Str"
+            },
+            {
+              "default": null,
+              "name": "question",
+              "type": "Str"
+            }
+          ],
+          "return_type": "Result<AnalysisReport, AgentError>"
+        }
+      ],
+      "model": "@anthropic/claude-4",
+      "name": "DataAnalysisAgent",
+      "tools": [
+        "ReadCSV",
+        "RunPython",
+        "PlotChart"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "enabled": true,
+      "name": "declaration_inspection",
+      "reason": "safe parsed declaration summaries are allowed"
+    },
+    {
+      "enabled": false,
+      "name": "method_execution",
+      "reason": "AXON method bodies are not executed yet"
+    },
+    {
+      "enabled": false,
+      "name": "provider_calls",
+      "reason": "model/provider calls require a future provider runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "tool_dispatch",
+      "reason": "real tool dispatch requires a future tool runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "memory_mutation",
+      "reason": "memory writes are not applied by the current runtime plan"
+    },
+    {
+      "enabled": false,
+      "name": "rag_indexing",
+      "reason": "RAG indexing is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "rag_retrieval",
+      "reason": "RAG retrieval is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "flow_execution",
+      "reason": "flow orchestration is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "trace_replay",
+      "reason": "trace replay is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "secret_resolution",
+      "reason": "environment secrets are not resolved by runtime planning"
+    },
+    {
+      "enabled": false,
+      "name": "fastmcp_runtime_import",
+      "reason": "FastMCP is not imported by compiler/runtime planning core"
+    }
+  ],
+  "counts": {
+    "agents": 1,
+    "flows": 0,
+    "imports": 0,
+    "prompts": 0,
+    "rags": 0,
+    "tools": 3,
+    "type_aliases": 1
+  },
+  "flows": [],
+  "imports": [],
+  "notes": [
+    "runtime plan is inspection-only",
+    "all executable capabilities remain disabled by Runtime RFC #001"
+  ],
+  "prompts": [],
+  "rags": [],
+  "source_path": "examples/data_analysis.ax",
+  "tools": [
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "docstring_count": 2,
+      "executable": false,
+      "has_body": true,
+      "name": "ReadCSV",
+      "params": [
+        {
+          "default": null,
+          "name": "path",
+          "type": "Str"
+        }
+      ],
+      "return_type": "Result<DataFrame, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "docstring_count": 2,
+      "executable": false,
+      "has_body": true,
+      "name": "RunPython",
+      "params": [
+        {
+          "default": null,
+          "name": "code",
+          "type": "Str"
+        },
+        {
+          "default": "{}",
+          "name": "context",
+          "type": "Map<Str, Any>"
+        }
+      ],
+      "return_type": "Result<Any, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "docstring_count": 2,
+      "executable": false,
+      "has_body": true,
+      "name": "PlotChart",
+      "params": [
+        {
+          "default": null,
+          "name": "data",
+          "type": "DataFrame"
+        },
+        {
+          "default": null,
+          "name": "title",
+          "type": "Str"
+        },
+        {
+          "default": "\"auto\"",
+          "name": "chart_type",
+          "type": "\"bar\" | \"line\" | \"scatter\" | \"auto\""
+        }
+      ],
+      "return_type": "Result<Str, ToolError>"
+    }
+  ],
+  "type_aliases": [
+    {
+      "field_count": 3,
+      "name": "AnalysisReport",
+      "type_params": [],
+      "value": "{ question: Str, findings: List<Str>, chart_path: Str }"
+    }
+  ]
+}

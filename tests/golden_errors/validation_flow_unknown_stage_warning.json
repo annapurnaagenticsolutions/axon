@@ -1,0 +1,14 @@
+{
+  "diagnostics": [
+    {
+      "code": "unknown-flow-stage",
+      "hint": "",
+      "line": 2,
+      "message": "flow 'F' references undeclared stage 'Missing'",
+      "related": [],
+      "severity": "warning"
+    }
+  ],
+  "kind": "validation",
+  "ok": true
+}

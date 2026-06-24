@@ -1,0 +1,166 @@
+{
+  "version": "0.2.0",
+  "imports": [
+    {
+      "kind": "import",
+      "names": [
+        "Chunk"
+      ],
+      "source": "axon:types"
+    }
+  ],
+  "type_aliases": [
+    {
+      "kind": "type_alias",
+      "name": "SupportResponse",
+      "type_params": [],
+      "value": "{ answer: Str, confidence: Float, escalated: Bool }",
+      "fields": [
+        {
+          "name": "answer",
+          "type_str": "Str",
+          "default": null
+        },
+        {
+          "name": "confidence",
+          "type_str": "Float",
+          "default": null
+        },
+        {
+          "name": "escalated",
+          "type_str": "Bool",
+          "default": null
+        }
+      ]
+    }
+  ],
+  "rags": [
+    {
+      "kind": "rag",
+      "name": "ProductDocs",
+      "source": "\"./knowledge_base/**/*.md\"",
+      "chunker": "Chunker::sliding(size: 512, overlap: 64)",
+      "embedder": "@openai/text-embed-3",
+      "store": "VectorDB::sqlite(\"./data/product_docs.db\")",
+      "methods": [
+        {
+          "name": "retrieve",
+          "params": [
+            {
+              "name": "query",
+              "type_str": "Str",
+              "default": null
+            },
+            {
+              "name": "top_k",
+              "type_str": "Int",
+              "default": "5"
+            }
+          ],
+          "return_type": "List<Chunk>",
+          "body": "store.search(embed(query), top_k)\n    |> rerank(query, model: @cohere/rerank-3)\n    |> filter(chunk => chunk.score > 0.72)",
+          "annotations": []
+        }
+      ],
+      "annotations": []
+    }
+  ],
+  "prompts": [
+    {
+      "kind": "prompt",
+      "name": "AnswerFromDocs",
+      "params": [
+        {
+          "name": "question",
+          "type_str": "Str",
+          "default": null
+        },
+        {
+          "name": "context",
+          "type_str": "List<Chunk>",
+          "default": null
+        }
+      ],
+      "return_type": "SupportResponse",
+      "template": "Answer the customer question using only the retrieved documentation.\n\nQuestion: {question}\nContext: {context}\n\nReturn answer, confidence, and whether escalation is required.",
+      "annotations": [
+        {
+          "name": "budget",
+          "args": {
+            "tokens": "900"
+          }
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "kind": "tool",
+      "name": "CreateSupportTicket",
+      "params": [
+        {
+          "name": "title",
+          "type_str": "Str",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type_str": "Str",
+          "default": null
+        },
+        {
+          "name": "priority",
+          "type_str": "\"low\" | \"medium\" | \"high\"",
+          "default": "\"medium\""
+        }
+      ],
+      "return_type": "Result<Str, ToolError>",
+      "docstrings": [
+        "Creates a support ticket in the service desk.",
+        "Use when documentation is missing or confidence is too low."
+      ],
+      "body": "http.post(env.SUPPORT_TICKET_API, { title, description, priority })",
+      "annotations": []
+    }
+  ],
+  "agents": [
+    {
+      "kind": "agent",
+      "name": "CustomerSupportAgent",
+      "model": "anthropic/claude-4",
+      "tools": [
+        "ProductDocs.retrieve",
+        "CreateSupportTicket"
+      ],
+      "memory": {
+        "kind": "Semantic",
+        "options": {}
+      },
+      "methods": [
+        {
+          "name": "handle",
+          "params": [
+            {
+              "name": "question",
+              "type_str": "Str",
+              "default": null
+            }
+          ],
+          "return_type": "Result<SupportResponse, AgentError>",
+          "body": "let context = act ProductDocs.retrieve(query: question, top_k: 5)?\nstore memory.working[\"last_question\"] = question\nlet response = model.complete(AnswerFromDocs(question, context))\n\nif response.escalated {\n    act CreateSupportTicket(title: question, description: response.answer, priority: \"medium\")?\n}\n\nOk(response)",
+          "annotations": []
+        }
+      ],
+      "annotations": [],
+      "workers": null
+    }
+  ],
+  "flows": [],
+  "global_security": {
+    "capabilities": [],
+    "approval_gates": [],
+    "max_token_budget": null,
+    "max_cost_budget_usd": null
+  },
+  "metadata": {}
+}

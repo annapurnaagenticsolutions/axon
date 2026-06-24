@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXON Playground — Parse to IR JSON</title>
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <header class="toolbar">
+    <div class="toolbar-left">
+      <span class="logo">AXON Playground</span>
+      <select id="exampleSelect">
+        <option value="hello">hello.ax — Basic agent</option>
+        <option value="hello_run">hello_run.ax — Tool call</option>
+        <option value="customer_support">customer_support.ax — Full example</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <div class="toolbar-right">
+      <button id="parseBtn" class="btn primary">Parse</button>
+      <button id="copyBtn" class="btn">Copy JSON</button>
+      <button id="downloadBtn" class="btn">Download</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <div class="panel source-panel">
+      <div class="panel-header">
+        <span class="panel-title">AXON Source</span>
+        <span class="panel-meta" id="sourceMeta">0 lines</span>
+      </div>
+      <div class="editor-wrap">
+        <div class="line-numbers" id="lineNumbers">1</div>
+        <textarea id="source" spellcheck="false" placeholder="Type or paste AXON source here…"></textarea>
+      </div>
+    </div>
+
+    <div class="resizer" id="resizer"></div>
+
+    <div class="panel output-panel">
+      <div class="panel-header">
+        <span class="panel-title">IR JSON</span>
+        <span class="panel-meta" id="outputMeta">AxonIR v0.2</span>
+      </div>
+      <pre id="output" class="json-view"><code class="placeholder">Click <strong>Parse</strong> to generate IR JSON…</code></pre>
+    </div>
+  </main>
+
+  <footer class="status-bar" id="statusBar">
+    <span id="statusText">Ready — WASM parser v0.1.0</span>
+  </footer>
+
+  <script type="module" src="playground.js"></script>
+</body>
+</html>

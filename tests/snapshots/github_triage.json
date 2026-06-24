@@ -1,0 +1,228 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": {
+        "kind": "ShortTerm",
+        "options": {
+          "capacity": "1000"
+        }
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body": "think \"Fetch untriaged issues and classify them\"\nlet issues = act FetchOpenIssues(repo: repo, max_results: 25)?\nstore memory.working[\"last_triage_run\"] = now().iso8601()\n\nfor issue in issues {\n    let decision = model.complete(ClassifyIssue(issue, team_context))\n    act AddIssueLabel(repo: repo, issue_number: issue.number, label: decision.priority)?\n    act AssignIssue(repo: repo, issue_number: issue.number, assignee: decision.assignee)?\n}\n\nOk(())",
+          "name": "triage",
+          "params": [
+            {
+              "default": null,
+              "name": "repo",
+              "type_str": "Str"
+            },
+            {
+              "default": null,
+              "name": "team_context",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Result<(), AgentError>"
+        }
+      ],
+      "model": "anthropic/claude-haiku",
+      "name": "GitHubTriageAgent",
+      "tools": [
+        "FetchOpenIssues",
+        "AddIssueLabel",
+        "AssignIssue"
+      ],
+      "workers": null
+    }
+  ],
+  "flows": [],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [
+    {
+      "kind": "import",
+      "names": [
+        "now"
+      ],
+      "source": "axon:time"
+    }
+  ],
+  "metadata": {},
+  "prompts": [
+    {
+      "annotations": [
+        {
+          "args": {
+            "tokens": "700"
+          },
+          "name": "budget"
+        }
+      ],
+      "kind": "prompt",
+      "name": "ClassifyIssue",
+      "params": [
+        {
+          "default": null,
+          "name": "issue",
+          "type_str": "Issue"
+        },
+        {
+          "default": null,
+          "name": "team_context",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "IssueDecision",
+      "template": "Classify this GitHub issue and choose an assignee.\n\nIssue title: {issue.title}\nIssue body: {issue.body}\nTeam context: {team_context}\n\nReturn priority, assignee, and rationale."
+    }
+  ],
+  "rags": [],
+  "tools": [
+    {
+      "annotations": [],
+      "body": "github.list_issues(repo, state: \"open\", limit: max_results)",
+      "docstrings": [
+        "Fetches open GitHub issues from a repository.",
+        "Use when triaging newly created or unassigned issues."
+      ],
+      "kind": "tool",
+      "name": "FetchOpenIssues",
+      "params": [
+        {
+          "default": null,
+          "name": "repo",
+          "type_str": "Str"
+        },
+        {
+          "default": "25",
+          "name": "max_results",
+          "type_str": "Int"
+        }
+      ],
+      "return_type": "Result<List<Issue>, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body": "github.add_label(repo, issue_number, label)",
+      "docstrings": [
+        "Adds one label to a GitHub issue.",
+        "Use after a priority or category decision is made."
+      ],
+      "kind": "tool",
+      "name": "AddIssueLabel",
+      "params": [
+        {
+          "default": null,
+          "name": "repo",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "issue_number",
+          "type_str": "Int"
+        },
+        {
+          "default": null,
+          "name": "label",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Result<Bool, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body": "github.assign_issue(repo, issue_number, assignee)",
+      "docstrings": [
+        "Assigns a GitHub issue to a team member.",
+        "Use after selecting the best owner for the issue."
+      ],
+      "kind": "tool",
+      "name": "AssignIssue",
+      "params": [
+        {
+          "default": null,
+          "name": "repo",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "issue_number",
+          "type_str": "Int"
+        },
+        {
+          "default": null,
+          "name": "assignee",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Result<Bool, ToolError>"
+    }
+  ],
+  "type_aliases": [
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "number",
+          "type_str": "Int"
+        },
+        {
+          "default": null,
+          "name": "title",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "body",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "labels",
+          "type_str": "List<Str>"
+        },
+        {
+          "default": null,
+          "name": "author",
+          "type_str": "Str"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "Issue",
+      "type_params": [],
+      "value": "{\n    number: Int,\n    title: Str,\n    body: Str,\n    labels: List<Str>,\n    author: Str\n}"
+    },
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "priority",
+          "type_str": "\"low\" | \"medium\" | \"high\" | \"critical\""
+        },
+        {
+          "default": null,
+          "name": "assignee",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "rationale",
+          "type_str": "Str"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "IssueDecision",
+      "type_params": [],
+      "value": "{\n    priority: \"low\" | \"medium\" | \"high\" | \"critical\",\n    assignee: Str,\n    rationale: Str\n}"
+    }
+  ],
+  "version": "0.2.0"
+}

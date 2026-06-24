@@ -1,0 +1,36 @@
+[
+  {
+    "request": {
+      "provider": "anthropic",
+      "method": "call",
+      "model": "claude-4",
+      "prompt": "Say hello in one word",
+      "max_tokens": 10,
+      "temperature": 0.7
+    },
+    "response": {
+      "ok": true,
+      "text": "Hello!",
+      "chunks": null,
+      "error_kind": null,
+      "error_message": null
+    }
+  },
+  {
+    "request": {
+      "provider": "anthropic",
+      "method": "call",
+      "model": "claude-4",
+      "prompt": "Trigger rate limit error",
+      "max_tokens": 10,
+      "temperature": 0.7
+    },
+    "response": {
+      "ok": false,
+      "text": null,
+      "chunks": null,
+      "error_kind": "rate_limit",
+      "error_message": "Rate limit exceeded"
+    }
+  }
+]

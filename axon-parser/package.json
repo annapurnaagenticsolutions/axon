@@ -1,0 +1,40 @@
+{
+  "name": "@axon/parser",
+  "version": "0.1.0",
+  "description": "AXON language parser — .ax source to portable IR JSON (WASM)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/annapurna-agentics/axon.git",
+    "directory": "axon-parser"
+  },
+  "files": [
+    "pkg",
+    "index.d.ts",
+    "README.md"
+  ],
+  "main": "pkg/node/axon_parser.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "node": "./pkg/node/axon_parser.js",
+      "default": "./pkg/bundler/axon_parser.js"
+    },
+    "./web": {
+      "types": "./pkg/axon_parser.d.ts",
+      "default": "./pkg/axon_parser.js"
+    }
+  },
+  "scripts": {
+    "build:wasm": "cargo build --lib --target wasm32-unknown-unknown --release --features wasm && wasm-bindgen --target nodejs --out-dir pkg/node target/wasm32-unknown-unknown/release/axon_parser.wasm && wasm-bindgen --target bundler --out-dir pkg/bundler target/wasm32-unknown-unknown/release/axon_parser.wasm && wasm-bindgen --target web --out-dir pkg target/wasm32-unknown-unknown/release/axon_parser.wasm && wasm-opt -Oz pkg/axon_parser_bg.wasm -o pkg/axon_parser_bg.wasm && wasm-opt -Oz pkg/node/axon_parser_bg.wasm -o pkg/node/axon_parser_bg.wasm && wasm-opt -Oz pkg/bundler/axon_parser_bg.wasm -o pkg/bundler/axon_parser_bg.wasm",
+    "test": "node tests/node_test.js"
+  },
+  "keywords": [
+    "axon",
+    "parser",
+    "wasm",
+    "agent",
+    "dsl"
+  ]
+}

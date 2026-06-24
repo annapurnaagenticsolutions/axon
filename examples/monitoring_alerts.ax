@@ -1,0 +1,56 @@
+type Metrics = {
+    service: Str,
+    latency_ms: Float,
+    error_rate: Float,
+    cpu_percent: Float
+}
+
+type AnomalyReport = {
+    severity: "info" | "warn" | "critical",
+    summary: Str,
+    metric: Str
+}
+
+prompt DetectAnomaly(metrics: Metrics, baseline: Str, @budget(tokens: 500)) -> AnomalyReport {
+    """
+    Detect whether the latest service metrics are anomalous.
+
+    Metrics: {metrics}
+    Baseline: {baseline}
+
+    Return severity, summary, and metric.
+    """
+}
+
+tool FetchMetrics(endpoint: Str) -> Result<Metrics, ToolError> {
+    /// Fetches service metrics from a monitoring endpoint.
+    /// Use on a schedule to monitor system health.
+    http.get(endpoint) |> parse_json::<Metrics>()
+}
+
+tool SendAlert(channel: Str, message: Str, severity: "info" | "warn" | "critical") -> Result<Bool, ToolError> {
+    /// Sends an operational alert to a channel.
+    /// Use only when anomaly severity requires notification.
+    slack.post(channel, message, severity)
+}
+
+agent MonitoringAgent {
+    model: @anthropic/claude-haiku
+    tools: [FetchMetrics, SendAlert]
+    memory: Memory<ShortTerm>(capacity: 500)
+
+    @schedule(every: 5.minutes)
+    @trace
+    fn watch(endpoint: Str, channel: Str) -> Result<(), AgentError> {
+        let metrics = act FetchMetrics(endpoint: endpoint)?
+        let baseline = memory.get("baseline").unwrap_or("no baseline yet")
+        let anomaly = model.complete(DetectAnomaly(metrics, baseline))
+
+        if anomaly.severity == "critical" {
+            act SendAlert(channel: channel, message: anomaly.summary, severity: "critical")?
+        }
+
+        store memory.working["last_metrics"] = metrics
+        Ok(())
+    }
+}

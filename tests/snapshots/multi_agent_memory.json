@@ -1,0 +1,231 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": {
+        "kind": "Semantic",
+        "options": {}
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body": "let fact1 = \"Neural networks are inspired by biological brains\"\n\nlet fact2 = \"Backpropagation was invented in 1986\"\n\nact RememberFact(key: \"nn_bio\", value: fact1)\n\nact RememberFact(key: \"backprop\", value: fact2)\n\nact SendMessage(to: \"Writer\", content: \"Research complete on \" + topic)\n\n\"done\"",
+          "name": "research",
+          "params": [
+            {
+              "default": null,
+              "name": "topic",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ],
+      "model": "mock/gpt",
+      "name": "Researcher",
+      "tools": [
+        "RememberFact",
+        "RecallFact",
+        "SendMessage",
+        "ReceiveMessage"
+      ],
+      "workers": null
+    },
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": {
+        "kind": "Semantic",
+        "options": {}
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body": "let msg = act ReceiveMessage()\n\nlet fact = act RecallFact(query: \"neural\")\n\nfact",
+          "name": "write",
+          "params": [
+            {
+              "default": null,
+              "name": "topic",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ],
+      "model": "mock/gpt",
+      "name": "Writer",
+      "tools": [
+        "RememberFact",
+        "RecallFact",
+        "SendMessage",
+        "ReceiveMessage"
+      ],
+      "workers": null
+    },
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": {
+        "kind": "Semantic",
+        "options": {}
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body": "delegate Researcher.research(topic: topic)\n\ndelegate Writer.write(topic: topic)",
+          "name": "run",
+          "params": [
+            {
+              "default": null,
+              "name": "topic",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ],
+      "model": "mock/gpt",
+      "name": "Coordinator",
+      "tools": [
+        "RememberFact",
+        "RecallFact",
+        "SendMessage",
+        "ReceiveMessage"
+      ],
+      "workers": null
+    }
+  ],
+  "flows": [
+    {
+      "annotations": [],
+      "edges": [
+        {
+          "from_stage": "Research",
+          "to_stage": "Write"
+        }
+      ],
+      "kind": "flow",
+      "name": "ResearchPipeline",
+      "params": [
+        {
+          "default": null,
+          "name": "topic",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Str",
+      "stages": [
+        {
+          "name": "Research",
+          "params": [
+            {
+              "default": null,
+              "name": "topic",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Str"
+        },
+        {
+          "name": "Write",
+          "params": [
+            {
+              "default": null,
+              "name": "topic",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ]
+    }
+  ],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [],
+  "metadata": {},
+  "prompts": [],
+  "rags": [],
+  "tools": [
+    {
+      "annotations": [],
+      "body": "remember(key, value)\n\"stored\"",
+      "docstrings": [
+        "Stores a fact in semantic memory."
+      ],
+      "kind": "tool",
+      "name": "RememberFact",
+      "params": [
+        {
+          "default": null,
+          "name": "key",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "value",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Str"
+    },
+    {
+      "annotations": [],
+      "body": "let results = recall(query, 1)\nresults",
+      "docstrings": [
+        "Recalls a fact from semantic memory."
+      ],
+      "kind": "tool",
+      "name": "RecallFact",
+      "params": [
+        {
+          "default": null,
+          "name": "query",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Str"
+    },
+    {
+      "annotations": [],
+      "body": "send(to, content)\n\"sent\"",
+      "docstrings": [
+        "Sends a message to another agent."
+      ],
+      "kind": "tool",
+      "name": "SendMessage",
+      "params": [
+        {
+          "default": null,
+          "name": "to",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "content",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Str"
+    },
+    {
+      "annotations": [],
+      "body": "receive()",
+      "docstrings": [
+        "Receives a message from another agent."
+      ],
+      "kind": "tool",
+      "name": "ReceiveMessage",
+      "params": [],
+      "return_type": "Str"
+    }
+  ],
+  "type_aliases": [],
+  "version": "0.2.0"
+}

@@ -1,0 +1,18 @@
+prompt DraftGreeting(name: Str, tone: "friendly" | "formal" = "friendly", @budget(tokens: 120)) -> Str {
+    """
+    Write a {tone} greeting for {name}.
+    Keep it short.
+    """
+}
+
+tool Echo(text: Str) -> Str {
+    /// Echoes text back unchanged.
+    text
+}
+
+agent PromptDemo {
+    model: @anthropic/claude-4
+    tools: [Echo]
+
+    fn run(name: Str) -> Str { name }
+}

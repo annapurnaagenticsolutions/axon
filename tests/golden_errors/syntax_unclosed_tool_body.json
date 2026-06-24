@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "filename": "syntax_unclosed_tool_body.ax",
+      "hint": "Check for a missing closing delimiter or an unmatched delimiter inside a string/body.",
+      "line": 2,
+      "message": "Unclosed body for tool Bad starting at line 2",
+      "pointer": "^",
+      "severity": "error",
+      "snippet": "tool Bad(name: Str) -> Str {"
+    }
+  ],
+  "kind": "syntax",
+  "ok": false
+}

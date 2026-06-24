@@ -1,0 +1,205 @@
+[
+  {
+    "node": "TypeAliasDecl",
+    "name": "InvoiceLine",
+    "type_params": [],
+    "value": "{ description: Str, quantity: Float, unit_price: Float, amount: Float }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "description",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "quantity",
+        "type_str": "Float",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "unit_price",
+        "type_str": "Float",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "amount",
+        "type_str": "Float",
+        "default": null
+      }
+    ],
+    "line": 1
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "InvoiceRecord",
+    "type_params": [],
+    "value": "{ vendor: Str, invoice_number: Str, invoice_date: Str, total: Float, lines: List<InvoiceLine> }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "vendor",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "invoice_number",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "invoice_date",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "total",
+        "type_str": "Float",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "lines",
+        "type_str": "List<InvoiceLine>",
+        "default": null
+      }
+    ],
+    "line": 8
+  },
+  {
+    "node": "PromptDecl",
+    "name": "ExtractInvoice",
+    "params": [
+      {
+        "node": "Param",
+        "name": "pdf_text",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "InvoiceRecord",
+    "template": "Extract a structured invoice record from this text.\n\nPDF text:\n{pdf_text}\n\nReturn vendor, invoice number, invoice date, total, and line items.",
+    "annotations": [
+      {
+        "node": "Annotation",
+        "name": "budget",
+        "args": {
+          "tokens": "1200"
+        }
+      }
+    ],
+    "line": 16
+  },
+  {
+    "node": "ToolDecl",
+    "name": "ReadPDF",
+    "params": [
+      {
+        "node": "Param",
+        "name": "path",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Str, ToolError>",
+    "docstrings": [
+      "Reads a PDF invoice and returns extracted text.",
+      "Use when a new invoice PDF appears in the watched folder."
+    ],
+    "body": "fs.read_pdf(path)",
+    "annotations": [],
+    "line": 27,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "InsertInvoice",
+    "params": [
+      {
+        "node": "Param",
+        "name": "record",
+        "type_str": "InvoiceRecord",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Bool, ToolError>",
+    "docstrings": [
+      "Inserts a structured invoice record into the finance database.",
+      "Use after invoice extraction and validation."
+    ],
+    "body": "db.insert(env.FINANCE_DB, \"invoices\", record)",
+    "annotations": [],
+    "line": 33,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "MoveFile",
+    "params": [
+      {
+        "node": "Param",
+        "name": "path",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "destination",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Bool, ToolError>",
+    "docstrings": [
+      "Moves a processed file to an archive or review folder.",
+      "Use after invoice processing succeeds or needs review."
+    ],
+    "body": "fs.move(path, destination)",
+    "annotations": [],
+    "line": 39,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "InvoiceExtractionAgent",
+    "model": "@anthropic/claude-4",
+    "tools": [
+      "ReadPDF",
+      "InsertInvoice",
+      "MoveFile"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "Episodic",
+      "options": {
+        "max_events": "10000"
+      }
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "process",
+        "params": [
+          {
+            "node": "Param",
+            "name": "path",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<InvoiceRecord, AgentError>",
+        "annotations": [],
+        "body": "let pdf_text = act ReadPDF(path: path)?\nlet record = model.complete(ExtractInvoice(pdf_text))\nact InsertInvoice(record: record)?\nact MoveFile(path: path, destination: \"./archive\")?\nstore memory.append(record)\nOk(record)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 45
+  }
+]

@@ -1,0 +1,62 @@
+{
+  "version": "0.2.0",
+  "imports": [],
+  "type_aliases": [],
+  "rags": [],
+  "prompts": [],
+  "tools": [
+    {
+      "kind": "tool",
+      "name": "Greet",
+      "params": [
+        {
+          "name": "name",
+          "type_str": "Str",
+          "default": null
+        }
+      ],
+      "return_type": "Str",
+      "docstrings": [
+        "Says hello to someone."
+      ],
+      "body": "\"Hello, {name}!\"",
+      "annotations": []
+    }
+  ],
+  "agents": [
+    {
+      "kind": "agent",
+      "name": "Bot",
+      "model": "anthropic/claude-4",
+      "tools": [
+        "Greet"
+      ],
+      "memory": null,
+      "methods": [
+        {
+          "name": "run",
+          "params": [
+            {
+              "name": "q",
+              "type_str": "Str",
+              "default": null
+            }
+          ],
+          "return_type": "Str",
+          "body": "act Greet(name: q)",
+          "annotations": []
+        }
+      ],
+      "annotations": [],
+      "workers": null
+    }
+  ],
+  "flows": [],
+  "global_security": {
+    "capabilities": [],
+    "approval_gates": [],
+    "max_token_budget": null,
+    "max_cost_budget_usd": null
+  },
+  "metadata": {}
+}

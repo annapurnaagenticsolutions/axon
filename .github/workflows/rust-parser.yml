@@ -1,0 +1,236 @@
+name: Rust Parser CI
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'axon-parser/**'
+      - 'examples/**'
+      - 'tests/test_rust_ir_conformance.py'
+      - '.github/workflows/rust-parser.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'axon-parser/**'
+      - 'examples/**'
+      - 'tests/test_rust_ir_conformance.py'
+      - '.github/workflows/rust-parser.yml'
+
+jobs:
+  rust-test:
+    name: Rust Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: axon-parser
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run Rust tests
+        run: cargo test
+
+      - name: Build CLI release
+        run: cargo build --release
+
+      - name: Build WASM library
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo build --lib --target wasm32-unknown-unknown --release --features wasm
+
+  python-conformance:
+    name: Python Conformance
+    runs-on: ubuntu-latest
+    needs: rust-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            axon-parser/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('axon-parser/Cargo.lock') }}
+
+      - name: Install Python deps
+        run: |
+          pip install -e .
+          pip install pytest
+
+      - name: Build Rust CLI
+        working-directory: axon-parser
+        run: cargo build --release
+
+      - name: Run conformance tests
+        run: |
+          export PYTHONPATH=src
+          python -m pytest tests/test_rust_ir_conformance.py -v
+
+      - name: Run snapshot tests
+        run: |
+          export PYTHONPATH=src
+          python -m pytest tests/test_parser_snapshots.py -v
+
+  node-wasm:
+    name: Node.js WASM Tests
+    runs-on: ubuntu-latest
+    needs: rust-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install wasm-bindgen
+        run: cargo install wasm-bindgen-cli
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            axon-parser/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('axon-parser/Cargo.lock') }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build WASM
+        working-directory: axon-parser
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo build --lib --target wasm32-unknown-unknown --release --features wasm
+          wasm-bindgen --target nodejs --out-dir pkg/node target/wasm32-unknown-unknown/release/axon_parser.wasm
+          wasm-bindgen --target bundler --out-dir pkg/bundler target/wasm32-unknown-unknown/release/axon_parser.wasm
+          wasm-bindgen --target web --out-dir pkg target/wasm32-unknown-unknown/release/axon_parser.wasm
+
+      - name: Run Node.js tests
+        working-directory: axon-parser
+        run: node tests/node_test.js
+
+  pyo3-build:
+    name: pyo3 Native Build
+    runs-on: ubuntu-latest
+    needs: rust-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            axon-parser/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('axon-parser/Cargo.lock') }}
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Build pyo3 wheel
+        working-directory: axon-parser
+        run: maturin build --features python --release
+
+      - name: Install wheel and verify
+        working-directory: axon-parser
+        run: |
+          pip install target/wheels/*.whl --force-reinstall --no-deps
+          python -c "import axon_parser; print(axon_parser.parse_axon('agent A { model: @mock/gpt fn run() -> Str { \"hi\" } }'))"
+
+  benchmark:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+    needs: [python-conformance, node-wasm, pyo3-build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            axon-parser/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('axon-parser/Cargo.lock') }}
+
+      - name: Install wasm-bindgen
+        run: cargo install wasm-bindgen-cli
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Install Python deps
+        run: |
+          pip install -e .
+
+      - name: Build Rust CLI
+        working-directory: axon-parser
+        run: cargo build --release
+
+      - name: Build WASM
+        working-directory: axon-parser
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo build --lib --target wasm32-unknown-unknown --release --features wasm
+          wasm-bindgen --target nodejs --out-dir pkg/node target/wasm32-unknown-unknown/release/axon_parser.wasm
+
+      - name: Build and install pyo3 wheel
+        working-directory: axon-parser
+        run: |
+          maturin build --features python --release
+          pip install target/wheels/*.whl --force-reinstall --no-deps
+
+      - name: Run benchmark
+        run: |
+          export PYTHONPATH=src
+          python tests/benchmark_parser.py
+
+      - name: Run three-way benchmark
+        run: |
+          export PYTHONPATH=src
+          python tests/benchmark_all.py

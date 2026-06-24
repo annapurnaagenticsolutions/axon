@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: axon-api
+  labels:
+    app: axon-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: axon-api
+  template:
+    metadata:
+      labels:
+        app: axon-api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: axon-api
+          image: axon:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: AXON_DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: axon-secret
+                  key: db-url
+            - name: AXON_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: axon-secret
+                  key: api-key
+            - name: AXON_LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: axon-config
+                  key: log-level
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL

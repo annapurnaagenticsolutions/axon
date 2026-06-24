@@ -1,0 +1,14 @@
+{
+  "diagnostics": [
+    {
+      "code": "unknown-agent-tool",
+      "hint": "Define a tool named 'MissingTool' or import it from axon:tools/",
+      "line": 2,
+      "message": "agent 'A' references unknown tool 'MissingTool'",
+      "related": [],
+      "severity": "error"
+    }
+  ],
+  "kind": "validation",
+  "ok": false
+}

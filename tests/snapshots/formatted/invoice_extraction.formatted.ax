@@ -1,0 +1,61 @@
+type InvoiceLine = {
+    description: Str,
+    quantity: Float,
+    unit_price: Float,
+    amount: Float,
+}
+
+type InvoiceRecord = {
+    vendor: Str,
+    invoice_number: Str,
+    invoice_date: Str,
+    total: Float,
+    lines: List<InvoiceLine>,
+}
+
+prompt ExtractInvoice(pdf_text: Str, @budget(tokens: 1200)) -> InvoiceRecord {
+    """
+    Extract a structured invoice record from this text.
+
+    PDF text:
+    {pdf_text}
+
+    Return vendor, invoice number, invoice date, total, and line items.
+    """
+}
+
+tool ReadPDF(path: Str) -> Result<Str, ToolError> {
+    /// Reads a PDF invoice and returns extracted text.
+    /// Use when a new invoice PDF appears in the watched folder.
+
+    fs.read_pdf(path)
+}
+
+tool InsertInvoice(record: InvoiceRecord) -> Result<Bool, ToolError> {
+    /// Inserts a structured invoice record into the finance database.
+    /// Use after invoice extraction and validation.
+
+    db.insert(env.FINANCE_DB, "invoices", record)
+}
+
+tool MoveFile(path: Str, destination: Str) -> Result<Bool, ToolError> {
+    /// Moves a processed file to an archive or review folder.
+    /// Use after invoice processing succeeds or needs review.
+
+    fs.move(path, destination)
+}
+
+agent InvoiceExtractionAgent {
+    model: @anthropic/claude-4
+    tools: [ReadPDF, InsertInvoice, MoveFile]
+    memory: Memory<Episodic>(max_events: 10000)
+
+    fn process(path: Str) -> Result<InvoiceRecord, AgentError> {
+        let pdf_text = act ReadPDF(path: path)?
+        let record = model.complete(ExtractInvoice(pdf_text))
+        act InsertInvoice(record: record)?
+        act MoveFile(path: path, destination: "./archive")?
+        store memory.append(record)
+        Ok(record)
+    }
+}

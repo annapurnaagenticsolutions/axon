@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AXON — The Programming Language for Autonomous Agents</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --surface-2: #1a1a25;
+      --text: #e8e8f0;
+      --text-dim: #8a8aa3;
+      --accent: #7c5cff;
+      --accent-2: #00d4aa;
+      --border: #222230;
+      --code-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+    
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 120px 0 80px;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero h1 {
+      font-size: 3.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero .tagline {
+      font-size: 1.25rem;
+      color: var(--text-dim);
+      margin-bottom: 40px;
+    }
+    .hero .cta {
+      display: inline-flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #6344e0;
+      text-decoration: none;
+    }
+    .btn:hover { background: var(--surface-2); }
+
+    /* Terminal */
+    .terminal {
+      max-width: 720px;
+      margin: 0 auto 60px;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .terminal-header {
+      background: var(--surface);
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+    .terminal-title { margin-left: 8px; color: var(--text-dim); font-size: 0.8rem; }
+    .terminal pre {
+      padding: 20px 24px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.7;
+    }
+    .terminal .cmd { color: var(--text-dim); }
+    .terminal .kw { color: #ff7b72; }
+    .terminal .type { color: #79c0ff; }
+    .terminal .str { color: #a5d6ff; }
+    .terminal .fn { color: #d2a8ff; }
+    .terminal .comment { color: #8b949e; }
+    .terminal .ann { color: var(--accent-2); }
+
+    /* Features */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      padding: 80px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+    }
+    .feature h3 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: var(--accent);
+    }
+    .feature p { color: var(--text-dim); font-size: 0.9rem; }
+
+    /* Stats */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      padding: 60px 0;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .stat .num {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .stat .label { color: var(--text-dim); font-size: 0.85rem; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <section class="hero">
+    <div class="container">
+      <h1><span>AXON</span></h1>
+      <p class="tagline">The programming language for autonomous agents.<br>
+      Write agents. Compile to production. Deploy anywhere.</p>
+      <div class="cta">
+        <a href="#install" class="btn btn-primary">Install in 30 seconds</a>
+        <a href="https://github.com/annapurnaagenticsolutions/axon" class="btn">GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="container" style="padding: 40px 24px;">
+    <div class="terminal">
+      <div class="terminal-header">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="terminal-title">research_pipeline.ax</span>
+      </div>
+      <pre><code><span class="comment">/// Multi-agent research pipeline in AXON</span>
+<span class="kw">agent</span> <span class="type">ResearchCoordinator</span> {
+    <span class="ann">model</span>: <span class="str">@anthropic/claude-4</span>
+    <span class="ann">tools</span>: [<span class="type">WebSearch</span>, <span class="type">ResearchDocs.retrieve</span>]
+
+    <span class="kw">fn</span> <span class="fn">run</span>(<span class="type">query</span>: <span class="type">ResearchQuery</span>) <span class="kw">-></span> <span class="type">Result</span>&lt;<span class="type">ResearchReport</span>, <span class="type">AgentError</span>&gt; {
+        <span class="kw">let</span> planner = <span class="fn">spawn</span> <span class="type">QueryPlanner</span>()
+        <span class="kw">let</span> plan = <span class="kw">await</span> planner.<span class="fn">plan</span>(query)?
+
+        <span class="kw">let</span> pool = <span class="fn">pool</span>(<span class="type">size</span>: <span class="str">3</span>, <span class="type">target</span>: <span class="type">ResearchAgent</span>)
+        <span class="kw">let</span> results = []
+        <span class="kw">for</span> sub <span class="kw">in</span> plan {
+            results = results + (<span class="kw">await</span> pool.<span class="fn">investigate</span>(sub)?)
+        }
+
+        <span class="kw">let</span> summary = <span class="kw">await</span> <span class="fn">spawn</span> <span class="type">SummarizerAgent</span>().<span class="fn">summarize</span>(results)?
+        <span class="kw">let</span> facts = <span class="kw">await</span> <span class="fn">spawn</span> <span class="type">FactCheckerAgent</span>().<span class="fn">verify_all</span>(summary)?
+
+        <span class="fn">Ok</span>(<span class="type">ResearchReport</span> { topic: query.topic, summary, facts })
+    }
+}</code></pre>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="stats">
+      <div class="stat"><div class="num">80+</div><div class="label">Tests Passing</div></div>
+      <div class="stat"><div class="num">Rust</div><div class="label">Core Parser</div></div>
+      <div class="stat"><div class="num">TS</div><div class="label">Compile Target</div></div>
+      <div class="stat"><div class="num">OpenAI</div><div class="label">+ Anthropic</div></div>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="features">
+      <div class="feature">
+        <h3>Native Agent Primitives</h3>
+        <p><code>spawn</code>, <code>pause</code>, <code>resume</code>, <code>terminate</code> are first-class language constructs, not library calls.</p>
+      </div>
+      <div class="feature">
+        <h3>Type-Safe Tooling</h3>
+        <p>Define tools with typed inputs and outputs. The compiler validates tool-agent compatibility before runtime.</p>
+      </div>
+      <div class="feature">
+        <h3>Multi-Target Compilation</h3>
+        <p>Compile AXON to FastMCP Python servers or TypeScript modules. One source, multiple runtimes.</p>
+      </div>
+      <div class="feature">
+        <h3>Debugger + Profiler</h3>
+        <p>Step through AEL execution traces, inspect memory state, and profile agent latency from the CLI.</p>
+      </div>
+      <div class="feature">
+        <h3>RAG Built In</h3>
+        <p>First-class <code>rag</code> declarations with chunking, embedding, and vector search — no external glue.</p>
+      </div>
+      <div class="feature">
+        <h3>Deploy Anywhere</h3>
+        <p><code>axon deploy --target docker</code> or <code>--target fly</code>. Production packaging in one command.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" class="container" style="padding: 80px 0; text-align: center;">
+    <h2 style="font-size: 1.8rem; margin-bottom: 32px;">Install in 30 Seconds</h2>
+    <div class="terminal" style="max-width: 520px; text-align: left;">
+      <div class="terminal-header">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="terminal-title">bash</span>
+      </div>
+      <pre style="padding: 20px 24px;"><code><span class="cmd">$</span> pip install axon-dsl
+<span class="cmd">$</span> axon --version
+<span class="comment"># Write your first agent</span>
+<span class="cmd">$</span> cat &gt; hello.ax &lt;&lt; 'EOF'
+agent Hello {
+    model: @mock/model
+    fn run(name: Str) -> Str {
+        "Hello, " + name
+    }
+}
+EOF
+<span class="cmd">$</span> axon run hello.ax --arg name=World
+<span class="comment"># Compile to TypeScript</span>
+<span class="cmd">$</span> axon compile hello.ax --target ts -o hello.ts</code></pre>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <p>Built with precision. Licensed under MIT.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

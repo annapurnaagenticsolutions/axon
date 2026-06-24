@@ -1,0 +1,192 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": {
+        "kind": "Episodic",
+        "options": {
+          "max_events": "5000"
+        }
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body": "let transcript = act TranscribeAudio(audio_path: audio_path)?\nlet summary = model.complete(SummarizeTranscript(transcript, audience: \"engineering\"))\nlet action_items = model.complete(ExtractActionItems(transcript))\nlet notes = MeetingNotes { summary, decisions: [], action_items }\nlet url = act SaveNotes(title: title, notes: notes)?\nstore memory.append(url)\nOk(notes)",
+          "name": "process",
+          "params": [
+            {
+              "default": null,
+              "name": "audio_path",
+              "type_str": "Str"
+            },
+            {
+              "default": null,
+              "name": "title",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Result<MeetingNotes, AgentError>"
+        }
+      ],
+      "model": "anthropic/claude-4",
+      "name": "MeetingNotesAgent",
+      "tools": [
+        "TranscribeAudio",
+        "SaveNotes"
+      ],
+      "workers": null
+    }
+  ],
+  "flows": [],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [],
+  "metadata": {},
+  "prompts": [
+    {
+      "annotations": [
+        {
+          "args": {
+            "tokens": "700"
+          },
+          "name": "budget"
+        }
+      ],
+      "kind": "prompt",
+      "name": "SummarizeTranscript",
+      "params": [
+        {
+          "default": null,
+          "name": "transcript",
+          "type_str": "Str"
+        },
+        {
+          "default": "\"general\"",
+          "name": "audience",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Str",
+      "template": "Summarize the meeting transcript for a {audience} audience.\n\nTranscript:\n{transcript}"
+    },
+    {
+      "annotations": [
+        {
+          "args": {
+            "tokens": "500"
+          },
+          "name": "budget"
+        }
+      ],
+      "kind": "prompt",
+      "name": "ExtractActionItems",
+      "params": [
+        {
+          "default": null,
+          "name": "transcript",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "List<ActionItem>",
+      "template": "Extract action items from this meeting transcript.\n\nTranscript:\n{transcript}"
+    }
+  ],
+  "rags": [],
+  "tools": [
+    {
+      "annotations": [],
+      "body": "audio.transcribe(audio_path)",
+      "docstrings": [
+        "Transcribes an audio file into text.",
+        "Use when the meeting input is an audio recording."
+      ],
+      "kind": "tool",
+      "name": "TranscribeAudio",
+      "params": [
+        {
+          "default": null,
+          "name": "audio_path",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Result<Str, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body": "notion.save(title, notes)",
+      "docstrings": [
+        "Saves meeting notes to a workspace page.",
+        "Use after summary, decisions, and action items are extracted."
+      ],
+      "kind": "tool",
+      "name": "SaveNotes",
+      "params": [
+        {
+          "default": null,
+          "name": "title",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "notes",
+          "type_str": "MeetingNotes"
+        }
+      ],
+      "return_type": "Result<Str, ToolError>"
+    }
+  ],
+  "type_aliases": [
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "owner",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "task",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "deadline",
+          "type_str": "Str"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "ActionItem",
+      "type_params": [],
+      "value": "{\n    owner: Str,\n    task: Str,\n    deadline: Str\n}"
+    },
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "summary",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "decisions",
+          "type_str": "List<Str>"
+        },
+        {
+          "default": null,
+          "name": "action_items",
+          "type_str": "List<ActionItem>"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "MeetingNotes",
+      "type_params": [],
+      "value": "{\n    summary: Str,\n    decisions: List<Str>,\n    action_items: List<ActionItem>\n}"
+    }
+  ],
+  "version": "0.2.0"
+}

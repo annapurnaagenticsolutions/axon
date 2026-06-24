@@ -1,0 +1,9 @@
+[defaults]
+model = "@mock/gpt"
+
+[sandbox]
+timeout_ms = 5000
+max_depth = 100
+
+[[provider]]
+name = "mock"

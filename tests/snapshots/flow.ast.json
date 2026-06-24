@@ -1,0 +1,112 @@
+[
+  {
+    "node": "ImportDecl",
+    "names": [
+      "Chunk"
+    ],
+    "source": "axon:types"
+  },
+  {
+    "node": "FlowDecl",
+    "name": "AnswerFlow",
+    "params": [
+      {
+        "node": "Param",
+        "name": "question",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Str",
+    "annotations": [],
+    "stages": [
+      {
+        "node": "StageDecl",
+        "name": "Retrieve",
+        "params": [
+          {
+            "node": "Param",
+            "name": "query",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "List<Chunk>",
+        "line": 4
+      },
+      {
+        "node": "StageDecl",
+        "name": "Answer",
+        "params": [
+          {
+            "node": "Param",
+            "name": "chunks",
+            "type_str": "List<Chunk>",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "question",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Str",
+        "line": 5
+      }
+    ],
+    "body": "Retrieve -> Answer",
+    "parsed_body": null,
+    "line": 3
+  },
+  {
+    "node": "ToolDecl",
+    "name": "Respond",
+    "params": [
+      {
+        "node": "Param",
+        "name": "text",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Str",
+    "docstrings": [
+      "Returns a response string."
+    ],
+    "body": "text",
+    "annotations": [],
+    "line": 10,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "FlowDemo",
+    "model": "@anthropic/claude-4",
+    "tools": [
+      "Respond"
+    ],
+    "memory": null,
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "run",
+        "params": [
+          {
+            "node": "Param",
+            "name": "question",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Str",
+        "annotations": [],
+        "body": "question",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 15
+  }
+]

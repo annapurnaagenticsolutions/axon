@@ -1,0 +1,119 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": null,
+      "methods": [
+        {
+          "annotations": [],
+          "body": "question",
+          "name": "run",
+          "params": [
+            {
+              "default": null,
+              "name": "question",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ],
+      "model": "anthropic/claude-4",
+      "name": "FlowDemo",
+      "tools": [
+        "Respond"
+      ],
+      "workers": null
+    }
+  ],
+  "flows": [
+    {
+      "annotations": [],
+      "edges": [
+        {
+          "from_stage": "Retrieve",
+          "to_stage": "Answer"
+        }
+      ],
+      "kind": "flow",
+      "name": "AnswerFlow",
+      "params": [
+        {
+          "default": null,
+          "name": "question",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Str",
+      "stages": [
+        {
+          "name": "Retrieve",
+          "params": [
+            {
+              "default": null,
+              "name": "query",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "List<Chunk>"
+        },
+        {
+          "name": "Answer",
+          "params": [
+            {
+              "default": null,
+              "name": "chunks",
+              "type_str": "List<Chunk>"
+            },
+            {
+              "default": null,
+              "name": "question",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ]
+    }
+  ],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [
+    {
+      "kind": "import",
+      "names": [
+        "Chunk"
+      ],
+      "source": "axon:types"
+    }
+  ],
+  "metadata": {},
+  "prompts": [],
+  "rags": [],
+  "tools": [
+    {
+      "annotations": [],
+      "body": "text",
+      "docstrings": [
+        "Returns a response string."
+      ],
+      "kind": "tool",
+      "name": "Respond",
+      "params": [
+        {
+          "default": null,
+          "name": "text",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Str"
+    }
+  ],
+  "type_aliases": [],
+  "version": "0.2.0"
+}

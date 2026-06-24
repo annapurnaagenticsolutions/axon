@@ -1,0 +1,150 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": {
+        "kind": "ShortTerm",
+        "options": {
+          "capacity": "2000"
+        }
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body": "let df = act ReadCSV(path: csv_path)?\nlet code = @generate(\"Python pandas code to answer: {question}\")\nlet stats = act RunPython(code: code, context: { df })?\nlet chart = act PlotChart(data: df, title: question, chart_type: \"auto\")?\nstore memory.working[\"last_stats\"] = stats\nOk(AnalysisReport { question, findings: [], chart_path: chart })",
+          "name": "analyze",
+          "params": [
+            {
+              "default": null,
+              "name": "csv_path",
+              "type_str": "Str"
+            },
+            {
+              "default": null,
+              "name": "question",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Result<AnalysisReport, AgentError>"
+        }
+      ],
+      "model": "anthropic/claude-4",
+      "name": "DataAnalysisAgent",
+      "tools": [
+        "ReadCSV",
+        "RunPython",
+        "PlotChart"
+      ],
+      "workers": null
+    }
+  ],
+  "flows": [],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [],
+  "metadata": {},
+  "prompts": [],
+  "rags": [],
+  "tools": [
+    {
+      "annotations": [],
+      "body": "fs.read(path) |> csv.parse::<DataFrame>()",
+      "docstrings": [
+        "Reads a CSV file into a structured dataframe.",
+        "Use when analysis starts from tabular data."
+      ],
+      "kind": "tool",
+      "name": "ReadCSV",
+      "params": [
+        {
+          "default": null,
+          "name": "path",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Result<DataFrame, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body": "sandbox.run_python(code, context)",
+      "docstrings": [
+        "Executes Python code inside a sandboxed environment.",
+        "Use for statistical calculations and data transformations."
+      ],
+      "kind": "tool",
+      "name": "RunPython",
+      "params": [
+        {
+          "default": null,
+          "name": "code",
+          "type_str": "Str"
+        },
+        {
+          "default": "{}",
+          "name": "context",
+          "type_str": "Map<Str, Any>"
+        }
+      ],
+      "return_type": "Result<Any, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body": "viz.plot(data, chart_type, title)",
+      "docstrings": [
+        "Generates a chart and returns the chart file path.",
+        "Use after computing analysis results."
+      ],
+      "kind": "tool",
+      "name": "PlotChart",
+      "params": [
+        {
+          "default": null,
+          "name": "data",
+          "type_str": "DataFrame"
+        },
+        {
+          "default": null,
+          "name": "title",
+          "type_str": "Str"
+        },
+        {
+          "default": "\"auto\"",
+          "name": "chart_type",
+          "type_str": "\"bar\" | \"line\" | \"scatter\" | \"auto\""
+        }
+      ],
+      "return_type": "Result<Str, ToolError>"
+    }
+  ],
+  "type_aliases": [
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "question",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "findings",
+          "type_str": "List<Str>"
+        },
+        {
+          "default": null,
+          "name": "chart_path",
+          "type_str": "Str"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "AnalysisReport",
+      "type_params": [],
+      "value": "{\n    question: Str,\n    findings: List<Str>,\n    chart_path: Str\n}"
+    }
+  ],
+  "version": "0.2.0"
+}

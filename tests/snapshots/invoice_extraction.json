@@ -1,0 +1,195 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": {
+        "kind": "Episodic",
+        "options": {
+          "max_events": "10000"
+        }
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body": "let pdf_text = act ReadPDF(path: path)?\nlet record = model.complete(ExtractInvoice(pdf_text))\nact InsertInvoice(record: record)?\nact MoveFile(path: path, destination: \"./archive\")?\nstore memory.append(record)\nOk(record)",
+          "name": "process",
+          "params": [
+            {
+              "default": null,
+              "name": "path",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Result<InvoiceRecord, AgentError>"
+        }
+      ],
+      "model": "anthropic/claude-4",
+      "name": "InvoiceExtractionAgent",
+      "tools": [
+        "ReadPDF",
+        "InsertInvoice",
+        "MoveFile"
+      ],
+      "workers": null
+    }
+  ],
+  "flows": [],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [],
+  "metadata": {},
+  "prompts": [
+    {
+      "annotations": [
+        {
+          "args": {
+            "tokens": "1200"
+          },
+          "name": "budget"
+        }
+      ],
+      "kind": "prompt",
+      "name": "ExtractInvoice",
+      "params": [
+        {
+          "default": null,
+          "name": "pdf_text",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "InvoiceRecord",
+      "template": "Extract a structured invoice record from this text.\n\nPDF text:\n{pdf_text}\n\nReturn vendor, invoice number, invoice date, total, and line items."
+    }
+  ],
+  "rags": [],
+  "tools": [
+    {
+      "annotations": [],
+      "body": "fs.read_pdf(path)",
+      "docstrings": [
+        "Reads a PDF invoice and returns extracted text.",
+        "Use when a new invoice PDF appears in the watched folder."
+      ],
+      "kind": "tool",
+      "name": "ReadPDF",
+      "params": [
+        {
+          "default": null,
+          "name": "path",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Result<Str, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body": "db.insert(env.FINANCE_DB, \"invoices\", record)",
+      "docstrings": [
+        "Inserts a structured invoice record into the finance database.",
+        "Use after invoice extraction and validation."
+      ],
+      "kind": "tool",
+      "name": "InsertInvoice",
+      "params": [
+        {
+          "default": null,
+          "name": "record",
+          "type_str": "InvoiceRecord"
+        }
+      ],
+      "return_type": "Result<Bool, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body": "fs.move(path, destination)",
+      "docstrings": [
+        "Moves a processed file to an archive or review folder.",
+        "Use after invoice processing succeeds or needs review."
+      ],
+      "kind": "tool",
+      "name": "MoveFile",
+      "params": [
+        {
+          "default": null,
+          "name": "path",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "destination",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Result<Bool, ToolError>"
+    }
+  ],
+  "type_aliases": [
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "description",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "quantity",
+          "type_str": "Float"
+        },
+        {
+          "default": null,
+          "name": "unit_price",
+          "type_str": "Float"
+        },
+        {
+          "default": null,
+          "name": "amount",
+          "type_str": "Float"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "InvoiceLine",
+      "type_params": [],
+      "value": "{\n    description: Str,\n    quantity: Float,\n    unit_price: Float,\n    amount: Float\n}"
+    },
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "vendor",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "invoice_number",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "invoice_date",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "total",
+          "type_str": "Float"
+        },
+        {
+          "default": null,
+          "name": "lines",
+          "type_str": "List<InvoiceLine>"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "InvoiceRecord",
+      "type_params": [],
+      "value": "{\n    vendor: Str,\n    invoice_number: Str,\n    invoice_date: Str,\n    total: Float,\n    lines: List<InvoiceLine>\n}"
+    }
+  ],
+  "version": "0.2.0"
+}

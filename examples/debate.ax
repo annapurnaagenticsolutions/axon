@@ -1,0 +1,32 @@
+type Argument = {
+    position: Str,
+    content: Str,
+    confidence: Float
+}
+
+type DebateTranscript = {
+    topic: Str,
+    rounds: List<Argument>,
+    conclusion: Str
+}
+
+agent DebaterAgent {
+    model: @anthropic/claude-4
+    tools: []
+    memory: Memory<Episodic>(max_events: 2000)
+
+    fn argue(position: Str, opponent_arg: Option<Str> = None, round: Int = 1) -> Result<Argument, AgentError> {
+        let history = memory.recall_all()
+        let argument = @argue(my_position: position, prior_rounds: history, counter: opponent_arg, round: round)
+        store memory.append(argument)
+        Ok(argument)
+    }
+}
+
+flow DebatePipeline(topic: Str, rounds: Int = 3) -> DebateTranscript {
+    stage Pro(round: Int) -> Argument
+    stage Con(round: Int) -> Argument
+    stage Synthesize(args: List<Argument>) -> DebateTranscript
+
+    [Pro, Con] -> Synthesize
+}

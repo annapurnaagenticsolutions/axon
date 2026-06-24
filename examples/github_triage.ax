@@ -1,0 +1,65 @@
+import { now } from "axon:time"
+
+type Issue = {
+    number: Int,
+    title: Str,
+    body: Str,
+    labels: List<Str>,
+    author: Str
+}
+
+type IssueDecision = {
+    priority: "low" | "medium" | "high" | "critical",
+    assignee: Str,
+    rationale: Str
+}
+
+prompt ClassifyIssue(issue: Issue, team_context: Str, @budget(tokens: 700)) -> IssueDecision {
+    """
+    Classify this GitHub issue and choose an assignee.
+
+    Issue title: {issue.title}
+    Issue body: {issue.body}
+    Team context: {team_context}
+
+    Return priority, assignee, and rationale.
+    """
+}
+
+tool FetchOpenIssues(repo: Str, max_results: Int = 25) -> Result<List<Issue>, ToolError> {
+    /// Fetches open GitHub issues from a repository.
+    /// Use when triaging newly created or unassigned issues.
+    github.list_issues(repo, state: "open", limit: max_results)
+}
+
+tool AddIssueLabel(repo: Str, issue_number: Int, label: Str) -> Result<Bool, ToolError> {
+    /// Adds one label to a GitHub issue.
+    /// Use after a priority or category decision is made.
+    github.add_label(repo, issue_number, label)
+}
+
+tool AssignIssue(repo: Str, issue_number: Int, assignee: Str) -> Result<Bool, ToolError> {
+    /// Assigns a GitHub issue to a team member.
+    /// Use after selecting the best owner for the issue.
+    github.assign_issue(repo, issue_number, assignee)
+}
+
+agent GitHubTriageAgent {
+    model: @anthropic/claude-haiku
+    tools: [FetchOpenIssues, AddIssueLabel, AssignIssue]
+    memory: Memory<ShortTerm>(capacity: 1000)
+
+    fn triage(repo: Str, team_context: Str) -> Result<(), AgentError> {
+        think "Fetch untriaged issues and classify them"
+        let issues = act FetchOpenIssues(repo: repo, max_results: 25)?
+        store memory.working["last_triage_run"] = now().iso8601()
+
+        for issue in issues {
+            let decision = model.complete(ClassifyIssue(issue, team_context))
+            act AddIssueLabel(repo: repo, issue_number: issue.number, label: decision.priority)?
+            act AssignIssue(repo: repo, issue_number: issue.number, assignee: decision.assignee)?
+        }
+
+        Ok(())
+    }
+}

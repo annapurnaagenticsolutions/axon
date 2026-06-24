@@ -1,0 +1,20 @@
+import { Chunk } from "axon:types"
+
+flow AnswerFlow(question: Str) -> Str {
+    stage Retrieve(query: Str) -> List<Chunk>
+    stage Answer(chunks: List<Chunk>, question: Str) -> Str
+
+    Retrieve -> Answer
+}
+
+tool Respond(text: Str) -> Str {
+    /// Returns a response string.
+    text
+}
+
+agent FlowDemo {
+    model: @anthropic/claude-4
+    tools: [Respond]
+
+    fn run(question: Str) -> Str { question }
+}

@@ -1,0 +1,72 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": {
+        "kind": "ShortTerm",
+        "options": {
+          "capacity": "500"
+        }
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body": "think \"Need to gather current information\"\nlet results = act WebSearch(query: topic, max_results: 5)?\nobserve results: [{ title: \"placeholder\" }]\nstore memory.working[\"results\"] = results\nOk(())",
+          "name": "run",
+          "params": [
+            {
+              "default": null,
+              "name": "topic",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Result<(), AgentError>"
+        }
+      ],
+      "model": "anthropic/claude-4",
+      "name": "ResearchAgent",
+      "tools": [
+        "WebSearch"
+      ],
+      "workers": null
+    }
+  ],
+  "flows": [],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [],
+  "metadata": {},
+  "prompts": [],
+  "rags": [],
+  "tools": [
+    {
+      "annotations": [],
+      "body": "http.get(\"https://api.search.example?q={query}&n={max_results}\")",
+      "docstrings": [
+        "Searches the web for current information."
+      ],
+      "kind": "tool",
+      "name": "WebSearch",
+      "params": [
+        {
+          "default": null,
+          "name": "query",
+          "type_str": "Str"
+        },
+        {
+          "default": "5",
+          "name": "max_results",
+          "type_str": "Int"
+        }
+      ],
+      "return_type": "Result<List<Any>, ToolError>"
+    }
+  ],
+  "type_aliases": [],
+  "version": "0.2.0"
+}

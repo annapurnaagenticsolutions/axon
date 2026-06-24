@@ -1,0 +1,188 @@
+/// AXON Research Pipeline — A Multi-Agent Showcase
+///
+/// This example demonstrates AXON's multi-agent orchestration,
+/// RAG integration, typed flows, and autonomous reasoning.
+///
+/// Run:  axon run examples/research_pipeline.ax --query "What is AXON?"
+/// Debug: axon debug trace.axontrace
+/// Profile: axon profile trace.axontrace --json
+
+import { Chunk } from "axon:types"
+
+type ResearchQuery = {
+    topic: Str,
+    depth: "quick" | "deep" = "quick"
+}
+
+type SearchResult = {
+    source: Str,
+    snippet: Str,
+    relevance: Float
+}
+
+type FactCheckResult = {
+    claim: Str,
+    verdict: "confirmed" | "plausible" | "disputed" | "unverified",
+    confidence: Float
+}
+
+type ResearchReport = {
+    topic: Str,
+    summary: Str,
+    sources: List<SearchResult>,
+    facts: List<FactCheckResult>,
+    confidence: Float
+}
+
+// ── Tools ──────────────────────────────────────────────────────────────────────
+
+tool WebSearch(query: Str, max_results: Int = 5) -> Result<List<SearchResult>, ToolError> {
+    /// Search the web for relevant sources.
+    http.get("https://api.search.example/v1", { q: query, limit: max_results })
+        |> map(result => {
+            source: result.url,
+            snippet: result.snippet,
+            relevance: result.score
+        })
+}
+
+tool ExtractFacts(text: Str) -> Result<List<Str>, ToolError> {
+    /// Extract factual claims from a text passage.
+    @extract_claims(text)
+}
+
+// ── RAG Knowledge Base ───────────────────────────────────────────────────────
+
+rag ResearchDocs {
+    source: "./knowledge_base/**/*.md"
+    chunker: Chunker::sliding(size: 1024, overlap: 128)
+    embedder: @openai/text-embed-3
+    store: VectorDB::in_memory()
+
+    fn retrieve(query: Str, top_k: Int = 3) -> List<Chunk> {
+        store.search(embed(query), top_k)
+            |> filter(chunk => chunk.score > 0.65)
+    }
+}
+
+// ── Agents ───────────────────────────────────────────────────────────────────
+
+agent QueryPlanner {
+    model: @openai/gpt-4o-mini
+    tools: [ResearchDocs.retrieve]
+
+    fn plan(query: ResearchQuery) -> Result<List<Str>, AgentError> {
+        /// Break a research topic into sub-queries.
+        let context = act ResearchDocs.retrieve(query: query.topic)?
+        let plan = @decompose(topic: query.topic, context: context, depth: query.depth)
+        Ok(plan)
+    }
+}
+
+agent ResearchAgent {
+    model: @anthropic/claude-4
+    tools: [WebSearch, ResearchDocs.retrieve]
+    memory: Memory<Episodic>(max_events: 500)
+
+    fn investigate(sub_query: Str, depth: Str) -> Result<List<SearchResult>, AgentError> {
+        /// Search and synthesize findings for a sub-query.
+        let web_results = act WebSearch(query: sub_query, max_results: 5)?
+        let docs = act ResearchDocs.retrieve(query: sub_query, top_k: 3)?
+
+        think f"Found {len(web_results)} web results and {len(docs)} internal docs for: {sub_query}"
+
+        store memory.append({ sub_query, web_results, docs })
+        Ok(web_results)
+    }
+}
+
+agent SummarizerAgent {
+    model: @anthropic/claude-haiku
+    tools: []
+
+    fn summarize(results: List<SearchResult>, topic: Str) -> Result<Str, AgentError> {
+        /// Summarize research findings into a coherent narrative.
+        let combined = results
+            |> map(r => r.snippet)
+            |> join("\n\n")
+
+        let summary = @synthesize(topic: topic, sources: combined)
+        Ok(summary)
+    }
+}
+
+agent FactCheckerAgent {
+    model: @openai/gpt-4o-mini
+    tools: [WebSearch]
+
+    fn verify(claim: Str) -> Result<FactCheckResult, AgentError> {
+        /// Fact-check a single claim against the web.
+        let evidence = act WebSearch(query: claim, max_results: 3)?
+        let verdict = @verify_claim(claim: claim, evidence: evidence)
+
+        observe "fact_check" { claim, verdict }
+        Ok(verdict)
+    }
+}
+
+// ── Flow Orchestration ───────────────────────────────────────────────────────
+
+flow ResearchPipeline(input: ResearchQuery) -> ResearchReport {
+    stage Plan(q: ResearchQuery) -> List<Str>
+    stage Investigate(queries: List<Str>) -> List<SearchResult>
+    stage Summarize(results: List<SearchResult>) -> Str
+    stage Verify(summary: Str) -> List<FactCheckResult>
+    stage Compile(facts: List<FactCheckResult>, summary: Str, sources: List<SearchResult>) -> ResearchReport
+
+    Plan -> Investigate -> Summarize -> Verify -> Compile
+}
+
+// ── Entry Point ──────────────────────────────────────────────────────────────
+
+agent ResearchCoordinator {
+    model: @anthropic/claude-4
+    tools: []
+
+    fn run(query: ResearchQuery) -> Result<ResearchReport, AgentError> {
+        /// Coordinate the full research pipeline.
+        think f"Starting research on: {query.topic} (depth: {query.depth})"
+
+        let planner = spawn QueryPlanner()
+        let plan = await planner.plan(query)?
+
+        let worker_pool = pool(size: 3, target: ResearchAgent)
+        let results = []
+        for sub in plan {
+            let result = await worker_pool.investigate(sub, query.depth)?
+            results = results + result
+        }
+
+        let summarizer = spawn SummarizerAgent()
+        let summary = await summarizer.summarize(results, query.topic)?
+
+        let claims = act ExtractFacts(text: summary)?
+        let checker = spawn FactCheckerAgent()
+        let facts = []
+        for claim in claims {
+            let verdict = await checker.verify(claim)?
+            facts = facts + [verdict]
+        }
+
+        let avg_confidence = facts
+            |> map(f => f.confidence)
+            |> avg()
+
+        let report = ResearchReport {
+            topic: query.topic,
+            summary: summary,
+            sources: results,
+            facts: facts,
+            confidence: avg_confidence
+        }
+
+        store "last_report" report
+        think f"Research complete. Confidence: {avg_confidence}"
+
+        Ok(report)
+    }
+}

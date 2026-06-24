@@ -1,0 +1,40 @@
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# AXON generated outputs
+*_server.py
+traces/*.jsonl
+traces/**/*.jsonl
+.axon/cache/
+.axon/tmp/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Backup files (never in source control)
+*.bak
+*.bak.*
+
+# OS / editor noise
+.DS_Store
+Thumbs.db

@@ -1,0 +1,30 @@
+import { Chunk } from "axon:types"
+
+rag ProductDocs {
+    source: "./knowledge_base/**/*.md"
+    chunker: Chunker::sliding(size: 512, overlap: 64)
+    embedder: @openai/text-embed-3
+    store: VectorDB::postgres(env.PGVECTOR_URL)
+
+    fn retrieve(query: Str, top_k: Int = 5) -> List<Chunk> {
+        store.search(embed(query), top_k)
+            |> rerank(query, model: @cohere/rerank-3)
+            |> filter(chunk => chunk.score > 0.72)
+    }
+}
+
+tool CreateTicket(title: Str, priority: "low" | "medium" | "high" = "medium") -> Result<Str, ToolError> {
+    /// Creates a support ticket.
+    /// Use when product documentation does not answer the user's question.
+    http.post(env.TICKET_API, { title, priority })
+}
+
+agent SupportAgent {
+    model: @anthropic/claude-4
+    tools: [ProductDocs.retrieve, CreateTicket]
+
+    fn handle(question: Str) -> Result<Str, AgentError> {
+        let context = act ProductDocs.retrieve(query: question)?
+        Ok(@answer(question, using: context))
+    }
+}

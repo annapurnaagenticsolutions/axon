@@ -1,0 +1,154 @@
+[
+  {
+    "node": "TypeAliasDecl",
+    "name": "AnalysisReport",
+    "type_params": [],
+    "value": "{ question: Str, findings: List<Str>, chart_path: Str }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "question",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "findings",
+        "type_str": "List<Str>",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "chart_path",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "line": 1
+  },
+  {
+    "node": "ToolDecl",
+    "name": "ReadCSV",
+    "params": [
+      {
+        "node": "Param",
+        "name": "path",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<DataFrame, ToolError>",
+    "docstrings": [
+      "Reads a CSV file into a structured dataframe.",
+      "Use when analysis starts from tabular data."
+    ],
+    "body": "fs.read(path) |> csv.parse::<DataFrame>()",
+    "annotations": [],
+    "line": 7,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "RunPython",
+    "params": [
+      {
+        "node": "Param",
+        "name": "code",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "context",
+        "type_str": "Map<Str, Any>",
+        "default": "{}"
+      }
+    ],
+    "return_type": "Result<Any, ToolError>",
+    "docstrings": [
+      "Executes Python code inside a sandboxed environment.",
+      "Use for statistical calculations and data transformations."
+    ],
+    "body": "sandbox.run_python(code, context)",
+    "annotations": [],
+    "line": 13,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "PlotChart",
+    "params": [
+      {
+        "node": "Param",
+        "name": "data",
+        "type_str": "DataFrame",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "title",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "chart_type",
+        "type_str": "\"bar\" | \"line\" | \"scatter\" | \"auto\"",
+        "default": "\"auto\""
+      }
+    ],
+    "return_type": "Result<Str, ToolError>",
+    "docstrings": [
+      "Generates a chart and returns the chart file path.",
+      "Use after computing analysis results."
+    ],
+    "body": "viz.plot(data, chart_type, title)",
+    "annotations": [],
+    "line": 19,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "DataAnalysisAgent",
+    "model": "@anthropic/claude-4",
+    "tools": [
+      "ReadCSV",
+      "RunPython",
+      "PlotChart"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "ShortTerm",
+      "options": {
+        "capacity": "2000"
+      }
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "analyze",
+        "params": [
+          {
+            "node": "Param",
+            "name": "csv_path",
+            "type_str": "Str",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "question",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<AnalysisReport, AgentError>",
+        "annotations": [],
+        "body": "let df = act ReadCSV(path: csv_path)?\nlet code = @generate(\"Python pandas code to answer: {question}\")\nlet stats = act RunPython(code: code, context: { df })?\nlet chart = act PlotChart(data: df, title: question, chart_type: \"auto\")?\nstore memory.working[\"last_stats\"] = stats\nOk(AnalysisReport { question, findings: [], chart_path: chart })",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 25
+  }
+]

@@ -1,0 +1,38 @@
+type AnalysisReport = {
+    question: Str,
+    findings: List<Str>,
+    chart_path: Str
+}
+
+tool ReadCSV(path: Str) -> Result<DataFrame, ToolError> {
+    /// Reads a CSV file into a structured dataframe.
+    /// Use when analysis starts from tabular data.
+    fs.read(path) |> csv.parse::<DataFrame>()
+}
+
+tool RunPython(code: Str, context: Map<Str, Any> = {}) -> Result<Any, ToolError> {
+    /// Executes Python code inside a sandboxed environment.
+    /// Use for statistical calculations and data transformations.
+    sandbox.run_python(code, context)
+}
+
+tool PlotChart(data: DataFrame, title: Str, chart_type: "bar" | "line" | "scatter" | "auto" = "auto") -> Result<Str, ToolError> {
+    /// Generates a chart and returns the chart file path.
+    /// Use after computing analysis results.
+    viz.plot(data, chart_type, title)
+}
+
+agent DataAnalysisAgent {
+    model: @anthropic/claude-4
+    tools: [ReadCSV, RunPython, PlotChart]
+    memory: Memory<ShortTerm>(capacity: 2000)
+
+    fn analyze(csv_path: Str, question: Str) -> Result<AnalysisReport, AgentError> {
+        let df = act ReadCSV(path: csv_path)?
+        let code = @generate("Python pandas code to answer: {question}")
+        let stats = act RunPython(code: code, context: { df })?
+        let chart = act PlotChart(data: df, title: question, chart_type: "auto")?
+        store memory.working["last_stats"] = stats
+        Ok(AnalysisReport { question, findings: [], chart_path: chart })
+    }
+}

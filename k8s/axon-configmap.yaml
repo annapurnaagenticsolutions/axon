@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: axon-config
+data:
+  log-level: "info"
+  port: "8000"
+  host: "0.0.0.0"

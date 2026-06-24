@@ -1,0 +1,101 @@
+[
+  {
+    "node": "TypeAliasDecl",
+    "name": "UserName",
+    "type_params": [],
+    "value": "Str",
+    "fields": [],
+    "line": 1
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "Priority",
+    "type_params": [],
+    "value": "\"low\" | \"medium\" | \"high\"",
+    "fields": [],
+    "line": 3
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "Issue",
+    "type_params": [],
+    "value": "{ id: Int, title: Str, priority: Priority, labels: List<Str> }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "id",
+        "type_str": "Int",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "title",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "priority",
+        "type_str": "Priority",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "labels",
+        "type_str": "List<Str>",
+        "default": null
+      }
+    ],
+    "line": 5
+  },
+  {
+    "node": "ToolDecl",
+    "name": "EchoIssueTitle",
+    "params": [
+      {
+        "node": "Param",
+        "name": "title",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Str",
+    "docstrings": [
+      "Echoes an issue title."
+    ],
+    "body": "title",
+    "annotations": [],
+    "line": 12,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "TypeAliasDemo",
+    "model": "@anthropic/claude-4",
+    "tools": [
+      "EchoIssueTitle"
+    ],
+    "memory": null,
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "run",
+        "params": [
+          {
+            "node": "Param",
+            "name": "title",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Str",
+        "annotations": [],
+        "body": "title",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 17
+  }
+]

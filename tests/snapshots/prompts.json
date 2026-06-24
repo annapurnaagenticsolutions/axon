@@ -1,0 +1,89 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": null,
+      "methods": [
+        {
+          "annotations": [],
+          "body": "name",
+          "name": "run",
+          "params": [
+            {
+              "default": null,
+              "name": "name",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ],
+      "model": "anthropic/claude-4",
+      "name": "PromptDemo",
+      "tools": [
+        "Echo"
+      ],
+      "workers": null
+    }
+  ],
+  "flows": [],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [],
+  "metadata": {},
+  "prompts": [
+    {
+      "annotations": [
+        {
+          "args": {
+            "tokens": "120"
+          },
+          "name": "budget"
+        }
+      ],
+      "kind": "prompt",
+      "name": "DraftGreeting",
+      "params": [
+        {
+          "default": null,
+          "name": "name",
+          "type_str": "Str"
+        },
+        {
+          "default": "\"friendly\"",
+          "name": "tone",
+          "type_str": "\"friendly\" | \"formal\""
+        }
+      ],
+      "return_type": "Str",
+      "template": "Write a {tone} greeting for {name}.\nKeep it short."
+    }
+  ],
+  "rags": [],
+  "tools": [
+    {
+      "annotations": [],
+      "body": "text",
+      "docstrings": [
+        "Echoes text back unchanged."
+      ],
+      "kind": "tool",
+      "name": "Echo",
+      "params": [
+        {
+          "default": null,
+          "name": "text",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Str"
+    }
+  ],
+  "type_aliases": [],
+  "version": "0.2.0"
+}

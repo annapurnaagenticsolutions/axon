@@ -1,0 +1,56 @@
+import Chunk from "axon:types"
+
+type SupportResponse = {
+    answer: Str,
+    confidence: Float,
+    escalated: Bool,
+}
+
+rag ProductDocs {
+    source: "./knowledge_base/**/*.md"
+    chunker: Chunker::sliding(size: 512, overlap: 64)
+    embedder: @openai/text-embed-3
+    store: VectorDB::sqlite("./data/product_docs.db")
+
+    fn retrieve(query: Str, top_k: Int = 5) -> List<Chunk> {
+        store.search(embed(query), top_k)
+            |> rerank(query, model: @cohere/rerank-3)
+            |> filter(chunk => chunk.score > 0.72)
+    }
+}
+
+prompt AnswerFromDocs(question: Str, context: List<Chunk>, @budget(tokens: 900)) -> SupportResponse {
+    """
+    Answer the customer question using only the retrieved documentation.
+
+    Question: {question}
+    Context: {context}
+
+    Return answer, confidence, and whether escalation is required.
+    """
+}
+
+tool CreateSupportTicket(title: Str, description: Str, priority: "low" | "medium" | "high" = "medium") -> Result<Str, ToolError> {
+    /// Creates a support ticket in the service desk.
+    /// Use when documentation is missing or confidence is too low.
+
+    http.post(env.SUPPORT_TICKET_API, { title, description, priority })
+}
+
+agent CustomerSupportAgent {
+    model: @anthropic/claude-4
+    tools: [ProductDocs.retrieve, CreateSupportTicket]
+    memory: Memory<Semantic>
+
+    fn handle(question: Str) -> Result<SupportResponse, AgentError> {
+        let context = act ProductDocs.retrieve(query: question, top_k: 5)?
+        store memory.working["last_question"] = question
+        let response = model.complete(AnswerFromDocs(question, context))
+
+        if response.escalated {
+            act CreateSupportTicket(title: question, description: response.answer, priority: "medium")?
+        }
+
+        Ok(response)
+    }
+}

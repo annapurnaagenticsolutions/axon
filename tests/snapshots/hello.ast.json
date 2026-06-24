@@ -1,0 +1,52 @@
+[
+  {
+    "node": "ToolDecl",
+    "name": "Greet",
+    "params": [
+      {
+        "node": "Param",
+        "name": "name",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Str",
+    "docstrings": [
+      "Says hello to someone."
+    ],
+    "body": "\"Hello, {name}!\"",
+    "annotations": [],
+    "line": 1,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "Bot",
+    "model": "@anthropic/claude-4",
+    "tools": [
+      "Greet"
+    ],
+    "memory": null,
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "run",
+        "params": [
+          {
+            "node": "Param",
+            "name": "q",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Str",
+        "annotations": [],
+        "body": "q",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 6
+  }
+]

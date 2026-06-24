@@ -1,0 +1,169 @@
+[
+  {
+    "node": "TypeAliasDecl",
+    "name": "Argument",
+    "type_params": [],
+    "value": "{ position: Str, content: Str, confidence: Float }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "position",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "content",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "confidence",
+        "type_str": "Float",
+        "default": null
+      }
+    ],
+    "line": 1
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "DebateTranscript",
+    "type_params": [],
+    "value": "{ topic: Str, rounds: List<Argument>, conclusion: Str }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "topic",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "rounds",
+        "type_str": "List<Argument>",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "conclusion",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "line": 7
+  },
+  {
+    "node": "AgentDecl",
+    "name": "DebaterAgent",
+    "model": "@anthropic/claude-4",
+    "tools": [],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "Episodic",
+      "options": {
+        "max_events": "2000"
+      }
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "argue",
+        "params": [
+          {
+            "node": "Param",
+            "name": "position",
+            "type_str": "Str",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "opponent_arg",
+            "type_str": "Option<Str>",
+            "default": "None"
+          },
+          {
+            "node": "Param",
+            "name": "round",
+            "type_str": "Int",
+            "default": "1"
+          }
+        ],
+        "return_type": "Result<Argument, AgentError>",
+        "annotations": [],
+        "body": "let history = memory.recall_all()\nlet argument = @argue(my_position: position, prior_rounds: history, counter: opponent_arg, round: round)\nstore memory.append(argument)\nOk(argument)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 13
+  },
+  {
+    "node": "FlowDecl",
+    "name": "DebatePipeline",
+    "params": [
+      {
+        "node": "Param",
+        "name": "topic",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "rounds",
+        "type_str": "Int",
+        "default": "3"
+      }
+    ],
+    "return_type": "DebateTranscript",
+    "annotations": [],
+    "stages": [
+      {
+        "node": "StageDecl",
+        "name": "Pro",
+        "params": [
+          {
+            "node": "Param",
+            "name": "round",
+            "type_str": "Int",
+            "default": null
+          }
+        ],
+        "return_type": "Argument",
+        "line": 27
+      },
+      {
+        "node": "StageDecl",
+        "name": "Con",
+        "params": [
+          {
+            "node": "Param",
+            "name": "round",
+            "type_str": "Int",
+            "default": null
+          }
+        ],
+        "return_type": "Argument",
+        "line": 28
+      },
+      {
+        "node": "StageDecl",
+        "name": "Synthesize",
+        "params": [
+          {
+            "node": "Param",
+            "name": "args",
+            "type_str": "List<Argument>",
+            "default": null
+          }
+        ],
+        "return_type": "DebateTranscript",
+        "line": 29
+      }
+    ],
+    "body": "[Pro, Con] -> Synthesize",
+    "parsed_body": null,
+    "line": 26
+  }
+]

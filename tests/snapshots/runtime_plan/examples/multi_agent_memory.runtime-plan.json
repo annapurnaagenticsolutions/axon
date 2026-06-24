@@ -1,0 +1,279 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": "Semantic",
+      "memory_options": {},
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 6,
+          "has_body": true,
+          "name": "research",
+          "params": [
+            {
+              "default": null,
+              "name": "topic",
+              "type": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ],
+      "model": "@mock/gpt",
+      "name": "Researcher",
+      "tools": [
+        "RememberFact",
+        "RecallFact",
+        "SendMessage",
+        "ReceiveMessage"
+      ]
+    },
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": "Semantic",
+      "memory_options": {},
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 3,
+          "has_body": true,
+          "name": "write",
+          "params": [
+            {
+              "default": null,
+              "name": "topic",
+              "type": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ],
+      "model": "@mock/gpt",
+      "name": "Writer",
+      "tools": [
+        "RememberFact",
+        "RecallFact",
+        "SendMessage",
+        "ReceiveMessage"
+      ]
+    },
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": "Semantic",
+      "memory_options": {},
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 2,
+          "has_body": true,
+          "name": "run",
+          "params": [
+            {
+              "default": null,
+              "name": "topic",
+              "type": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ],
+      "model": "@mock/gpt",
+      "name": "Coordinator",
+      "tools": [
+        "RememberFact",
+        "RecallFact",
+        "SendMessage",
+        "ReceiveMessage"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "enabled": true,
+      "name": "declaration_inspection",
+      "reason": "safe parsed declaration summaries are allowed"
+    },
+    {
+      "enabled": false,
+      "name": "method_execution",
+      "reason": "AXON method bodies are not executed yet"
+    },
+    {
+      "enabled": false,
+      "name": "provider_calls",
+      "reason": "model/provider calls require a future provider runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "tool_dispatch",
+      "reason": "real tool dispatch requires a future tool runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "memory_mutation",
+      "reason": "memory writes are not applied by the current runtime plan"
+    },
+    {
+      "enabled": false,
+      "name": "rag_indexing",
+      "reason": "RAG indexing is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "rag_retrieval",
+      "reason": "RAG retrieval is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "flow_execution",
+      "reason": "flow orchestration is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "trace_replay",
+      "reason": "trace replay is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "secret_resolution",
+      "reason": "environment secrets are not resolved by runtime planning"
+    },
+    {
+      "enabled": false,
+      "name": "fastmcp_runtime_import",
+      "reason": "FastMCP is not imported by compiler/runtime planning core"
+    }
+  ],
+  "counts": {
+    "agents": 3,
+    "flows": 1,
+    "imports": 0,
+    "prompts": 0,
+    "rags": 0,
+    "tools": 4,
+    "type_aliases": 0
+  },
+  "flows": [
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "executable": false,
+      "name": "ResearchPipeline",
+      "params": [
+        {
+          "default": null,
+          "name": "topic",
+          "type": "Str"
+        }
+      ],
+      "return_type": "Str",
+      "stages": [
+        {
+          "name": "Research",
+          "params": [
+            {
+              "default": null,
+              "name": "topic",
+              "type": "Str"
+            }
+          ],
+          "return_type": "Str"
+        },
+        {
+          "name": "Write",
+          "params": [
+            {
+              "default": null,
+              "name": "topic",
+              "type": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ]
+    }
+  ],
+  "imports": [],
+  "notes": [
+    "runtime plan is inspection-only",
+    "all executable capabilities remain disabled by Runtime RFC #001"
+  ],
+  "prompts": [],
+  "rags": [],
+  "source_path": "examples/multi_agent_memory.ax",
+  "tools": [
+    {
+      "annotations": [],
+      "body_line_count": 2,
+      "docstring_count": 1,
+      "executable": false,
+      "has_body": true,
+      "name": "RememberFact",
+      "params": [
+        {
+          "default": null,
+          "name": "key",
+          "type": "Str"
+        },
+        {
+          "default": null,
+          "name": "value",
+          "type": "Str"
+        }
+      ],
+      "return_type": "Str"
+    },
+    {
+      "annotations": [],
+      "body_line_count": 2,
+      "docstring_count": 1,
+      "executable": false,
+      "has_body": true,
+      "name": "RecallFact",
+      "params": [
+        {
+          "default": null,
+          "name": "query",
+          "type": "Str"
+        }
+      ],
+      "return_type": "Str"
+    },
+    {
+      "annotations": [],
+      "body_line_count": 2,
+      "docstring_count": 1,
+      "executable": false,
+      "has_body": true,
+      "name": "SendMessage",
+      "params": [
+        {
+          "default": null,
+          "name": "to",
+          "type": "Str"
+        },
+        {
+          "default": null,
+          "name": "content",
+          "type": "Str"
+        }
+      ],
+      "return_type": "Str"
+    },
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "docstring_count": 1,
+      "executable": false,
+      "has_body": true,
+      "name": "ReceiveMessage",
+      "params": [],
+      "return_type": "Str"
+    }
+  ],
+  "type_aliases": []
+}

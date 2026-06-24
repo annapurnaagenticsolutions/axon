@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "axon-dsl"
+version = "0.1.0"
+description = "AXON: A typed DSL for autonomous agents. Compiles to Python + TypeScript."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Annapurna Agentic Solutions" }
+]
+keywords = [
+    "axon",
+    "agents",
+    "ai",
+    "llm",
+    "mcp",
+    "codegen",
+    "dsl"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Compilers"
+]
+dependencies = []
+
+[project.optional-dependencies]
+serve = [
+    "fastmcp>=0.4.0"
+]
+dev = [
+    "pytest>=8.0"
+]
+providers = [
+    "openai>=1.0"
+]
+db = [
+    "psycopg[binary]>=3.0"
+]
+
+[project.scripts]
+axon = "axon.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

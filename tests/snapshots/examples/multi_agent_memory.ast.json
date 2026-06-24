@@ -1,0 +1,245 @@
+[
+  {
+    "node": "ToolDecl",
+    "name": "RememberFact",
+    "params": [
+      {
+        "node": "Param",
+        "name": "key",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "value",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Str",
+    "docstrings": [
+      "Stores a fact in semantic memory."
+    ],
+    "body": "remember(key, value)\n\"stored\"",
+    "annotations": [],
+    "line": 1,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "RecallFact",
+    "params": [
+      {
+        "node": "Param",
+        "name": "query",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Str",
+    "docstrings": [
+      "Recalls a fact from semantic memory."
+    ],
+    "body": "let results = recall(query, 1)\nresults",
+    "annotations": [],
+    "line": 8,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "SendMessage",
+    "params": [
+      {
+        "node": "Param",
+        "name": "to",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "content",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Str",
+    "docstrings": [
+      "Sends a message to another agent."
+    ],
+    "body": "send(to, content)\n\"sent\"",
+    "annotations": [],
+    "line": 15,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "ReceiveMessage",
+    "params": [],
+    "return_type": "Str",
+    "docstrings": [
+      "Receives a message from another agent."
+    ],
+    "body": "receive()",
+    "annotations": [],
+    "line": 22,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "Researcher",
+    "model": "@mock/gpt",
+    "tools": [
+      "RememberFact",
+      "RecallFact",
+      "SendMessage",
+      "ReceiveMessage"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "Semantic",
+      "options": {}
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "research",
+        "params": [
+          {
+            "node": "Param",
+            "name": "topic",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Str",
+        "annotations": [],
+        "body": "let fact1 = \"Neural networks are inspired by biological brains\"\nlet fact2 = \"Backpropagation was invented in 1986\"\nact RememberFact(key: \"nn_bio\", value: fact1)\nact RememberFact(key: \"backprop\", value: fact2)\nact SendMessage(to: \"Writer\", content: \"Research complete on \" + topic)\n\"done\"",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 28
+  },
+  {
+    "node": "AgentDecl",
+    "name": "Writer",
+    "model": "@mock/gpt",
+    "tools": [
+      "RememberFact",
+      "RecallFact",
+      "SendMessage",
+      "ReceiveMessage"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "Semantic",
+      "options": {}
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "write",
+        "params": [
+          {
+            "node": "Param",
+            "name": "topic",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Str",
+        "annotations": [],
+        "body": "let msg = act ReceiveMessage()\nlet fact = act RecallFact(query: \"neural\")\nfact",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 43
+  },
+  {
+    "node": "AgentDecl",
+    "name": "Coordinator",
+    "model": "@mock/gpt",
+    "tools": [
+      "RememberFact",
+      "RecallFact",
+      "SendMessage",
+      "ReceiveMessage"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "Semantic",
+      "options": {}
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "run",
+        "params": [
+          {
+            "node": "Param",
+            "name": "topic",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Str",
+        "annotations": [],
+        "body": "delegate Researcher.research(topic: topic)\ndelegate Writer.write(topic: topic)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 55
+  },
+  {
+    "node": "FlowDecl",
+    "name": "ResearchPipeline",
+    "params": [
+      {
+        "node": "Param",
+        "name": "topic",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Str",
+    "annotations": [],
+    "stages": [
+      {
+        "node": "StageDecl",
+        "name": "Research",
+        "params": [
+          {
+            "node": "Param",
+            "name": "topic",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Str",
+        "line": 67
+      },
+      {
+        "node": "StageDecl",
+        "name": "Write",
+        "params": [
+          {
+            "node": "Param",
+            "name": "topic",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Str",
+        "line": 68
+      }
+    ],
+    "body": "Research -> Write",
+    "parsed_body": null,
+    "line": 66
+  }
+]

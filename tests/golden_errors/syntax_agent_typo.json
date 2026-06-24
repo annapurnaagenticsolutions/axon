@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "filename": "syntax_agent_typo.ax",
+      "hint": "Did you mean `agent`?",
+      "line": 2,
+      "message": "Unexpected token at line 2: agnt Bot {\n    model",
+      "pointer": "^",
+      "severity": "error",
+      "snippet": "agnt Bot {"
+    }
+  ],
+  "kind": "syntax",
+  "ok": false
+}

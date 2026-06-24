@@ -1,0 +1,16 @@
+{
+  "diagnostics": [
+    {
+      "column": 1,
+      "filename": "syntax_missing_arrow.ax",
+      "hint": "Function-like declarations must use `-> ReturnType` before the body.",
+      "line": 2,
+      "message": "Expected '->' after parameters for tool Bad at line 2",
+      "pointer": "^",
+      "severity": "error",
+      "snippet": "tool Bad(name: Str) Str {"
+    }
+  ],
+  "kind": "syntax",
+  "ok": false
+}

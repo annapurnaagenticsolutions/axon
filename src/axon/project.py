@@ -1,0 +1,166 @@
+"""Project skeleton creation for AXON workspaces.
+
+Task #13 keeps project initialization intentionally small and predictable. The
+helpers here create a minimal AXON project that can immediately run through the
+existing Phase 1 toolchain: ``axon validate``, ``axon build``, and ``axon smoke``.
+
+No network calls are made. No real API keys are written. Provider credentials are
+represented only as environment-variable placeholders inside ``axon.toml``.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+import re
+
+
+class ProjectInitError(Exception):
+    """Raised for user-facing project initialization failures."""
+
+
+@dataclass(frozen=True)
+class ProjectInitResult:
+    """Summary of files touched by ``axon new`` or ``axon init``."""
+
+    path: Path
+    created: list[Path] = field(default_factory=list)
+    skipped: list[Path] = field(default_factory=list)
+    overwritten: list[Path] = field(default_factory=list)
+
+    @property
+    def changed(self) -> list[Path]:
+        """Files that were created or overwritten."""
+        return [*self.created, *self.overwritten]
+
+    def format(self) -> str:
+        """Return a concise human-readable report."""
+        lines = [f"AXON project ready: {self.path}"]
+        if self.created:
+            lines.append("Created:")
+            lines.extend(f"  {path}" for path in self.created)
+        if self.overwritten:
+            lines.append("Overwritten:")
+            lines.extend(f"  {path}" for path in self.overwritten)
+        if self.skipped:
+            lines.append("Skipped existing:")
+            lines.extend(f"  {path}" for path in self.skipped)
+        if not self.created and not self.overwritten and not self.skipped:
+            lines.append("No files changed.")
+        return "\n".join(lines)
+
+
+def create_project(path: str | Path, *, force: bool = False) -> ProjectInitResult:
+    """Create a new AXON project directory.
+
+    ``axon new`` is conservative: if the target directory already exists and is
+    not empty, it fails unless ``force=True``. This protects accidental overwrites
+    when users mistype a path.
+    """
+    target = Path(path).expanduser().resolve()
+    if target.exists() and not target.is_dir():
+        raise ProjectInitError(f"target exists and is not a directory: {target}")
+    if target.exists() and any(target.iterdir()) and not force:
+        raise ProjectInitError(f"target directory is not empty: {target}; pass --force to add missing AXON files")
+    return init_project(target, force=force)
+
+
+def init_project(path: str | Path = ".", *, force: bool = False) -> ProjectInitResult:
+    """Initialize an AXON project skeleton in an existing or new directory.
+
+    Existing files are preserved by default. Passing ``force=True`` overwrites
+    only the known AXON starter files managed by this helper.
+    """
+    root = Path(path).expanduser().resolve()
+    if root.exists() and not root.is_dir():
+        raise ProjectInitError(f"target exists and is not a directory: {root}")
+    root.mkdir(parents=True, exist_ok=True)
+
+    project_name = _project_name(root)
+    files = _starter_files(project_name)
+
+    created: list[Path] = []
+    skipped: list[Path] = []
+    overwritten: list[Path] = []
+
+    for relative, content in files.items():
+        destination = root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        normalized_content = content.rstrip() + "\n"
+
+        if destination.exists() and not force:
+            skipped.append(relative)
+            continue
+
+        existed = destination.exists()
+        destination.write_text(normalized_content, encoding="utf-8")
+        if existed:
+            overwritten.append(relative)
+        else:
+            created.append(relative)
+
+    return ProjectInitResult(path=root, created=created, skipped=skipped, overwritten=overwritten)
+
+
+def _project_name(root: Path) -> str:
+    raw = root.name or "axon-project"
+    slug = re.sub(r"[^A-Za-z0-9_-]+", "-", raw).strip("-_")
+    return slug or "axon-project"
+
+
+def _starter_files(project_name: str) -> dict[Path, str]:
+    return {
+        Path("axon.toml"): f'''# AXON project configuration for {project_name}
+# API keys never belong in .ax files. Keep secrets in environment variables.
+
+[defaults]
+model = "@ollama/llama3"
+embed = "@ollama/nomic-embed-text"
+
+[providers.ollama]
+base_url = "http://localhost:11434"
+
+# Uncomment when you are ready to use cloud providers.
+# [providers.anthropic]
+# api_key = "${{ANTHROPIC_API_KEY}}"
+#
+# [providers.openai]
+# api_key = "${{OPENAI_API_KEY}}"
+''',
+        Path("examples/hello.ax"): '''tool Greet(name: Str) -> Str {
+    /// Says hello to someone.
+    /// Use as the first AXON smoke-test tool.
+    "Hello, {name}!"
+}
+
+agent HelloAgent {
+    model: env.DEFAULT_MODEL
+    tools: [Greet]
+
+    fn run(name: Str) -> Str {
+        act Greet(name: name)?
+    }
+}
+''',
+        Path("README.md"): f'''# {project_name}
+
+AXON project skeleton generated by `axon new` / `axon init`.
+
+## Try it
+
+```bash
+axon validate examples/hello.ax
+axon smoke examples/hello.ax
+axon build examples/hello.ax --config axon.toml --stdout
+```
+
+## Files
+
+- `axon.toml` — provider defaults and environment-variable placeholders.
+- `examples/hello.ax` — minimal AXON tool + agent example.
+
+API keys should stay in your shell environment or secret manager, never inside `.ax` source files.
+''',
+        Path(".gitignore"): '# Python caches and bytecode\n__pycache__/\n*.py[cod]\n.pytest_cache/\n.mypy_cache/\n.ruff_cache/\n.coverage\nhtmlcov/\n\n# Python build artifacts\nbuild/\ndist/\n*.egg-info/\n\n# Virtual environments\n.venv/\nvenv/\nenv/\n\n# AXON generated outputs\n*_server.py\ntraces/*.jsonl\ntraces/**/*.jsonl\n.axon/cache/\n.axon/tmp/\n\n# Local secrets\n.env\n.env.*\n!.env.example\n*.pem\n*.key\n\n# OS / editor noise\n.DS_Store\nThumbs.db\n',
+        Path("traces/.gitkeep"): "",
+    }

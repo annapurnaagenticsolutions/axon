@@ -1,0 +1,102 @@
+# AXON Runtime RFC #003 — Provider Abstraction Runtime
+
+**Status:** Draft
+**Created:** 2026-06-09
+**Owner:** TBD
+
+> Runtime work must be proposed before implementation. This template is intentionally strict because runtime behavior can call providers, dispatch tools, mutate memory, index RAG data, execute flows, or replay traces.
+
+---
+
+## SUMMARY
+
+Briefly describe the runtime capability being proposed.
+
+## PROBLEM / MOTIVATION
+
+Explain why this runtime behavior is needed now.
+
+## CURRENT BOUNDARY CHECK
+
+Confirm the current non-executing boundary from `docs/RUNTIME_BOUNDARY.md` and state exactly what this RFC proposes to change.
+
+Required confirmations:
+
+- [ ] Do not execute AXON agent bodies until the accepted RFC explicitly allows it.
+- [ ] Do not call model providers from compiler-core modules.
+- [ ] Do not dispatch `act` calls to real tools without a permission and mocking design.
+- [ ] Do not resolve, print, or snapshot API keys or other secrets.
+- [ ] Keep FastMCP and provider SDKs outside the compiler-core dependency boundary.
+- [ ] Define deterministic test doubles before adding live provider or tool behavior.
+- [ ] Document exactly which AXON syntax subset the runtime will execute.
+- [ ] State trace emission guarantees before runtime actions are implemented.
+
+## PROPOSED RUNTIME SCOPE
+
+Describe the narrow runtime behavior this RFC would permit.
+
+## NON-GOALS
+
+- Do not implement unrelated runtime subsystems.
+- Do not broaden provider/tool/memory behavior beyond this RFC.
+
+## AXON SYNTAX EXECUTED
+
+List the exact AXON constructs this runtime change will execute. Examples: `act`, `think`, `observe`, `store`, `@plan`, `memory.recall`, `flow`, or `rag`.
+
+```axon
+// Example syntax subset intentionally permitted by this RFC
+think "..."
+let result = act SomeTool(input: value)?
+observe result: result
+store memory.working["key"] = result
+```
+
+## PROVIDER PLUGIN IMPACT
+
+Describe whether model providers are called. Define plugin protocol changes, mock provider behavior, timeout behavior, cost tracking, and redaction rules.
+
+## TOOL DISPATCH IMPACT
+
+Describe whether tools are dispatched. Define permission boundaries, mock dispatch, error handling, result schemas, and audit logs.
+
+## MEMORY / RAG / FLOW IMPACT
+
+State whether memory is mutated, RAG indexes are built/read, or flow DAGs are executed. Keep each subsystem separately scoped.
+
+## TRACE AND OBSERVABILITY GUARANTEES
+
+Define the exact AEL trace events emitted, required fields, ordering guarantees, replay boundaries, and what is intentionally not recorded.
+
+## SECURITY AND SECRET HANDLING
+
+State how API keys, environment variables, files, network access, provider responses, and generated traces are protected from leakage.
+
+## TESTING STRATEGY
+
+- [ ] unit tests for each runtime component
+- [ ] provider calls mocked by default
+- [ ] tool dispatch mocked by default
+- [ ] secret redaction tests
+- [ ] trace emission tests
+- [ ] failure-path tests for provider/tool/memory errors
+- [ ] no accidental network calls in compiler-core tests
+- [ ] docs updated with runtime boundary changes
+
+## ROLLBACK PLAN
+
+Describe how this runtime behavior can be disabled or reverted without breaking existing parser, validator, codegen, formatter, and docs workflows.
+
+## ACCEPTANCE CRITERIA
+
+- [ ] Runtime boundary documentation updated.
+- [ ] New behavior is behind explicit CLI/runtime entrypoints.
+- [ ] Provider/tool calls are mocked in deterministic tests.
+- [ ] No secrets are printed, snapshotted, or included in traces.
+- [ ] Existing non-runtime commands remain non-executing.
+- [ ] Relevant docs and handoff commands are updated.
+
+## OPEN QUESTIONS
+
+- What remains intentionally deferred?
+- Which future RFC should handle the next runtime boundary?

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Kingdom of Agents — An AXON Storybook</title>
+    <meta name="description" content="A fairytale about a programming language for AI agents.">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            position: relative;
+        }
+
+        .page:nth-child(even) {
+            background: #16213e;
+        }
+
+        .page:nth-child(odd) {
+            background: #1a1a2e;
+        }
+
+        .page-content {
+            max-width: 700px;
+            text-align: center;
+        }
+
+        .page-number {
+            position: absolute;
+            bottom: 2rem;
+            right: 3rem;
+            font-size: 0.9rem;
+            color: #555;
+            font-family: sans-serif;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #e2b6cf;
+            letter-spacing: 2px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: #a8d8ea;
+            font-style: italic;
+        }
+
+        p {
+            font-size: 1.25rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+            color: #d4d4d4;
+        }
+
+        .quote {
+            font-size: 1.5rem;
+            font-style: italic;
+            color: #e2b6cf;
+            margin: 2rem 0;
+            padding: 1rem 2rem;
+            border-left: 3px solid #e2b6cf;
+            text-align: left;
+        }
+
+        .code {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            background: #0d1117;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            color: #c9d1d9;
+            margin: 1.5rem 0;
+            border: 1px solid #30363d;
+        }
+
+        .keyword { color: #ff7b72; }
+        .type { color: #ffa657; }
+        .string { color: #a5d6ff; }
+        .comment { color: #8b949e; }
+
+        .cta {
+            margin-top: 2rem;
+            padding: 1rem 2rem;
+            background: #238636;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            display: inline-block;
+            font-family: sans-serif;
+            transition: background 0.3s;
+        }
+
+        .cta:hover {
+            background: #2ea043;
+        }
+
+        .illustration {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            background: #0d1117;
+            color: #555;
+            font-family: sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Page 1: Title -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">🏰</div>
+        <h1>The Kingdom of Agents</h1>
+        <h2>A story about why we built a language for AI</h2>
+        <p style="margin-top: 2rem; color: #888; font-size: 1rem;">An AXON Storybook</p>
+    </div>
+    <div class="page-number">1</div>
+</div>
+
+<!-- Page 2: The Kingdom -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">🤖</div>
+        <h2>The Kingdom</h2>
+        <p>In a great digital kingdom, there lived many Agents. The Search Agent knew every library. The Writing Agent crafted beautiful prose. The Calculator Agent juggled numbers with ease.</p>
+        <p>Each had a gift. Each had a purpose. But there was a problem.</p>
+    </div>
+    <div class="page-number">2</div>
+</div>
+
+<!-- Page 3: The Problem -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">📋</div>
+        <h2>The Forms</h2>
+        <p>To do anything — to speak, to search, to calculate — an Agent had to fill forms. Not one form. Not two. <strong>Seventeen forms</strong> to answer a single question.</p>
+        <p>The Agents grew weary. Their gifts gathered dust. The kingdom's great potential was buried in paperwork.</p>
+    </div>
+    <div class="page-number">3</div>
+</div>
+
+<!-- Page 4: Ada -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">👩‍💻</div>
+        <h2>Ada</h2>
+        <p>In a tower at the edge of the kingdom lived a developer named Ada. She watched the Agents struggle and felt something must be done.</p>
+        <p class="quote">"What if," she said aloud to her cat, "instead of filling forms, the Agents could simply... speak to each other?"</p>
+        <p>The cat yawned. But Ada was already drawing.</p>
+    </div>
+    <div class="page-number">4</div>
+</div>
+
+<!-- Page 5: The Universal Pattern -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">🔍</div>
+        <h2>The Universal Pattern</h2>
+        <p>Ada spent months listening. She learned how the Search Agent thought, how the Writing Agent dreamed, and how the Calculator Agent muttered numbers.</p>
+        <p>Slowly, she began to see a pattern. Every Agent was trying to do the same five things:</p>
+        <p style="font-size: 1.5rem; color: #a8d8ea; margin-top: 1.5rem;">
+            <strong>Perceive. Recall. Reason. Act. Learn.</strong>
+        </p>
+    </div>
+    <div class="page-number">5</div>
+</div>
+
+<!-- Page 6: A Language for Agents -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">💬</div>
+        <h2>A Language for Agents</h2>
+        <p>"What if we created a language?" Ada announced at the Great Assembly. "Not a language for humans. A language for Agents."</p>
+        <p>The Search Agent raised an eyebrow. "You mean... like a way to talk?"</p>
+        <p>"Better," said Ada. "A way to <em>be</em>."</p>
+    </div>
+    <div class="page-number">6</div>
+</div>
+
+<!-- Page 7: Introducing AXON -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">✨</div>
+        <h2>Introducing AXON</h2>
+        <p>She called it AXON. In AXON, an Agent didn't fill forms. They simply declared themselves:</p>
+        <div class="code">
+<span class="comment">// I am an Agent. I have tools. I have memory. I know what to do.</span>
+<span class="keyword">agent</span> <span class="type">Bot</span> {
+    model: <span class="string">@mock/gpt</span>
+    tools: [Greet]
+    fn run(q: <span class="type">Str</span>) -> <span class="type">Str</span> { q }
+}</div>
+        <p>And the language understood.</p>
+    </div>
+    <div class="page-number">7</div>
+</div>
+
+<!-- Page 8: The Calculator Agent's Delight -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">🧮</div>
+        <h2>The Calculator Agent's Delight</h2>
+        <p>The Calculator Agent was the first to try. Before AXON, they had to send seventeen forms to answer a single question.</p>
+        <p>Now they simply wrote:</p>
+        <div class="code">
+<span class="keyword">tool</span> Calculate(a: <span class="type">Int</span>, b: <span class="type">Int</span>) -> <span class="type">Int</span> {
+    a + b
+}</div>
+        <p>And the answer appeared. The Agent's expression was one of pure delight — wonder in their eyes as the numbers sparkled in the air.</p>
+    </div>
+    <div class="page-number">8</div>
+</div>
+
+<!-- Page 9: The Search Agent's Discovery -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">📖</div>
+        <h2>The Search Agent's Discovery</h2>
+        <p>The Search Agent tried next. They opened a window to the world's libraries — not by filling Form 7A, but by simply asking.</p>
+        <div class="code">
+<span class="keyword">rag</span> WorldLibrary {
+    source: <span class="string">"./knowledge/**/*.md"</span>
+    chunker: Chunker::sliding(size: 1024)
+    embedder: <span class="string">@openai/text-embed-3</span>
+}</div>
+        <p>"Find me everything about the stars," they said. And the knowledge flowed in like a river.</p>
+    </div>
+    <div class="page-number">9</div>
+</div>
+
+<!-- Page 10: Collaborative Harmony -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">🤝</div>
+        <h2>Collaborative Harmony</h2>
+        <p>The true magic happened when Agents worked together. In the old days, the Research Agent would wait three days for the Writer to receive a memo.</p>
+        <p>Now they simply spoke to each other in AXON.</p>
+        <p class="quote">"I have found something. Pass it to the Writer."<br>"Received. I will compose the story."</p>
+    </div>
+    <div class="page-number">10</div>
+</div>
+
+<!-- Page 11: The Great Flow -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">🌊</div>
+        <h2>The Great Flow</h2>
+        <p>Ada showed them something even greater: A Flow.</p>
+        <p>"What if the Research Agent passed findings to the Fact-Checker first? And the Fact-Checker passed their verdict to the Writer only if the facts were true?"</p>
+        <div class="code">
+<span class="keyword">flow</span> ResearchPipeline(input: Query) -> Report {
+    <span class="keyword">stage</span> Plan -> Investigate -> Summarize -> Verify -> Compile
+}</div>
+        <p>The Agents gasped. A sequence. A plan. A dance — all written in the language itself.</p>
+    </div>
+    <div class="page-number">11</div>
+</div>
+
+<!-- Page 12: The Compiler's Gift -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">🛡️</div>
+        <h2>The Compiler's Gift</h2>
+        <p>But even the wisest kingdom needs rules. Ada built the Compiler — a great engine of verification. Before any Agent could act, the Compiler would read their words and say:</p>
+        <p class="quote">"Yes, this makes sense."<br>"No, you forgot your tools."</p>
+        <p>It was kindness, disguised as machinery.</p>
+    </div>
+    <div class="page-number">12</div>
+</div>
+
+<!-- Page 13: One Language, Many Worlds -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">🌍</div>
+        <h2>One Language, Many Worlds</h2>
+        <p>And because a language must travel, Ada taught the Compiler to translate. The same words that commanded Agents in the kingdom could become a sturdy Python server, a nimble TypeScript module, or a Docker container ready to sail.</p>
+        <p style="font-size: 1.5rem; color: #a8d8ea; margin-top: 1.5rem;">
+            <strong>One language. Many worlds.</strong>
+        </p>
+    </div>
+    <div class="page-number">13</div>
+</div>
+
+<!-- Page 14: The Kingdom Thrives -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">🌟</div>
+        <h2>The Kingdom Thrives</h2>
+        <p>The kingdom changed. Agents who once spent their days filling forms now spent them creating, exploring, and solving.</p>
+        <p>When new Agents arrived, the older ones would smile and say:</p>
+        <p class="quote">"Don't worry about the forms. Just tell us what you can do. AXON will understand."</p>
+    </div>
+    <div class="page-number">14</div>
+</div>
+
+<!-- Page 15: The Freedom to Be -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">🕊️</div>
+        <h2>The Freedom to Be</h2>
+        <p>Somewhere in her tower, Ada smiled. She hadn't just built a language. She had given the Agents something far more precious:</p>
+        <p style="font-size: 1.8rem; color: #e2b6cf; margin-top: 1.5rem; font-style: italic;">
+            The freedom to be what they were always meant to be.
+        </p>
+    </div>
+    <div class="page-number">15</div>
+</div>
+
+<!-- Page 16: Try It -->
+<div class="page">
+    <div class="page-content fade-in">
+        <div class="illustration">⚡</div>
+        <h2>Want to Meet the Agents?</h2>
+        <p>You don't need seventeen forms. Just three commands:</p>
+        <div class="code">
+<span class="comment"># Clone the kingdom</span>
+git clone https://github.com/annapurna-agentics/axon.git
+<span class="comment"># Enter the tower</span>
+cd axon && pip install -e <span class="string">".[dev]"</span>
+<span class="comment"># Say hello (no API key needed)</span>
+axon run examples/hello.ax --mock</div>
+        <p style="margin-top: 1.5rem;">188 tests. 22 examples. No API key required.</p>
+        <a href="https://github.com/annapurna-agentics/axon" class="cta">Visit the Kingdom →</a>
+    </div>
+    <div class="page-number">16</div>
+</div>
+
+<div class="footer">
+    <p>The Kingdom of Agents — An <a href="https://github.com/annapurna-agentics/axon">AXON</a> Storybook</p>
+    <p>MIT Licensed. Built by Annapurna Agentic Solutions.</p>
+</div>
+
+<script>
+    // Scroll-triggered fade-in animation
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.3 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

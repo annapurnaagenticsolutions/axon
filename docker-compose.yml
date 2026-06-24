@@ -1,0 +1,61 @@
+# AXON Production Stack
+# Usage: docker compose up --build
+
+services:
+  # PostgreSQL persistence backend
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: axon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-axon_password}
+      POSTGRES_DB: axon
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U axon -d axon"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - axon_network
+
+  # Redis for future message bus / caching
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - axon_network
+
+  # AXON API server
+  axon-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      AXON_DB_URL: postgresql://axon:${POSTGRES_PASSWORD:-axon_password}@postgres/axon
+      AXON_API_KEY: ${AXON_API_KEY:-}
+      AXON_LOG_LEVEL: ${AXON_LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - axon_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  axon_network:
+    driver: bridge

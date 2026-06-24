@@ -1,0 +1,202 @@
+[
+  {
+    "node": "TypeAliasDecl",
+    "name": "Metrics",
+    "type_params": [],
+    "value": "{ service: Str, latency_ms: Float, error_rate: Float, cpu_percent: Float }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "service",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "latency_ms",
+        "type_str": "Float",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "error_rate",
+        "type_str": "Float",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "cpu_percent",
+        "type_str": "Float",
+        "default": null
+      }
+    ],
+    "line": 1
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "AnomalyReport",
+    "type_params": [],
+    "value": "{ severity: \"info\" | \"warn\" | \"critical\", summary: Str, metric: Str }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "severity",
+        "type_str": "\"info\" | \"warn\" | \"critical\"",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "summary",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "metric",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "line": 8
+  },
+  {
+    "node": "PromptDecl",
+    "name": "DetectAnomaly",
+    "params": [
+      {
+        "node": "Param",
+        "name": "metrics",
+        "type_str": "Metrics",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "baseline",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "AnomalyReport",
+    "template": "Detect whether the latest service metrics are anomalous.\n\nMetrics: {metrics}\nBaseline: {baseline}\n\nReturn severity, summary, and metric.",
+    "annotations": [
+      {
+        "node": "Annotation",
+        "name": "budget",
+        "args": {
+          "tokens": "500"
+        }
+      }
+    ],
+    "line": 14
+  },
+  {
+    "node": "ToolDecl",
+    "name": "FetchMetrics",
+    "params": [
+      {
+        "node": "Param",
+        "name": "endpoint",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Metrics, ToolError>",
+    "docstrings": [
+      "Fetches service metrics from a monitoring endpoint.",
+      "Use on a schedule to monitor system health."
+    ],
+    "body": "http.get(endpoint) |> parse_json::<Metrics>()",
+    "annotations": [],
+    "line": 25,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "SendAlert",
+    "params": [
+      {
+        "node": "Param",
+        "name": "channel",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "message",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "severity",
+        "type_str": "\"info\" | \"warn\" | \"critical\"",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Bool, ToolError>",
+    "docstrings": [
+      "Sends an operational alert to a channel.",
+      "Use only when anomaly severity requires notification."
+    ],
+    "body": "slack.post(channel, message, severity)",
+    "annotations": [],
+    "line": 31,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "MonitoringAgent",
+    "model": "@anthropic/claude-haiku",
+    "tools": [
+      "FetchMetrics",
+      "SendAlert"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "ShortTerm",
+      "options": {
+        "capacity": "500"
+      }
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "watch",
+        "params": [
+          {
+            "node": "Param",
+            "name": "endpoint",
+            "type_str": "Str",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "channel",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<(), AgentError>",
+        "annotations": [
+          {
+            "node": "Annotation",
+            "name": "schedule",
+            "args": {
+              "every": "5.minutes"
+            }
+          },
+          {
+            "node": "Annotation",
+            "name": "trace",
+            "args": {}
+          }
+        ],
+        "body": "let metrics = act FetchMetrics(endpoint: endpoint)?\nlet baseline = memory.get(\"baseline\").unwrap_or(\"no baseline yet\")\nlet anomaly = model.complete(DetectAnomaly(metrics, baseline))\n\nif anomaly.severity == \"critical\" {\n    act SendAlert(channel: channel, message: anomaly.summary, severity: \"critical\")?\n}\n\nstore memory.working[\"last_metrics\"] = metrics\nOk(())",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 37
+  }
+]

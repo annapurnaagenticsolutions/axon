@@ -1,0 +1,192 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": {
+        "kind": "ShortTerm",
+        "options": {
+          "capacity": "500"
+        }
+      },
+      "methods": [
+        {
+          "annotations": [
+            {
+              "args": {
+                "every": "5.minutes"
+              },
+              "name": "schedule"
+            },
+            {
+              "args": {},
+              "name": "trace"
+            }
+          ],
+          "body": "let metrics = act FetchMetrics(endpoint: endpoint)?\nlet baseline = memory.get(\"baseline\").unwrap_or(\"no baseline yet\")\nlet anomaly = model.complete(DetectAnomaly(metrics, baseline))\n\nif anomaly.severity == \"critical\" {\n    act SendAlert(channel: channel, message: anomaly.summary, severity: \"critical\")?\n}\n\nstore memory.working[\"last_metrics\"] = metrics\nOk(())",
+          "name": "watch",
+          "params": [
+            {
+              "default": null,
+              "name": "endpoint",
+              "type_str": "Str"
+            },
+            {
+              "default": null,
+              "name": "channel",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Result<(), AgentError>"
+        }
+      ],
+      "model": "anthropic/claude-haiku",
+      "name": "MonitoringAgent",
+      "tools": [
+        "FetchMetrics",
+        "SendAlert"
+      ],
+      "workers": null
+    }
+  ],
+  "flows": [],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [],
+  "metadata": {},
+  "prompts": [
+    {
+      "annotations": [
+        {
+          "args": {
+            "tokens": "500"
+          },
+          "name": "budget"
+        }
+      ],
+      "kind": "prompt",
+      "name": "DetectAnomaly",
+      "params": [
+        {
+          "default": null,
+          "name": "metrics",
+          "type_str": "Metrics"
+        },
+        {
+          "default": null,
+          "name": "baseline",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "AnomalyReport",
+      "template": "Detect whether the latest service metrics are anomalous.\n\nMetrics: {metrics}\nBaseline: {baseline}\n\nReturn severity, summary, and metric."
+    }
+  ],
+  "rags": [],
+  "tools": [
+    {
+      "annotations": [],
+      "body": "http.get(endpoint) |> parse_json::<Metrics>()",
+      "docstrings": [
+        "Fetches service metrics from a monitoring endpoint.",
+        "Use on a schedule to monitor system health."
+      ],
+      "kind": "tool",
+      "name": "FetchMetrics",
+      "params": [
+        {
+          "default": null,
+          "name": "endpoint",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Result<Metrics, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body": "slack.post(channel, message, severity)",
+      "docstrings": [
+        "Sends an operational alert to a channel.",
+        "Use only when anomaly severity requires notification."
+      ],
+      "kind": "tool",
+      "name": "SendAlert",
+      "params": [
+        {
+          "default": null,
+          "name": "channel",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "message",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "severity",
+          "type_str": "\"info\" | \"warn\" | \"critical\""
+        }
+      ],
+      "return_type": "Result<Bool, ToolError>"
+    }
+  ],
+  "type_aliases": [
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "service",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "latency_ms",
+          "type_str": "Float"
+        },
+        {
+          "default": null,
+          "name": "error_rate",
+          "type_str": "Float"
+        },
+        {
+          "default": null,
+          "name": "cpu_percent",
+          "type_str": "Float"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "Metrics",
+      "type_params": [],
+      "value": "{\n    service: Str,\n    latency_ms: Float,\n    error_rate: Float,\n    cpu_percent: Float\n}"
+    },
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "severity",
+          "type_str": "\"info\" | \"warn\" | \"critical\""
+        },
+        {
+          "default": null,
+          "name": "summary",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "metric",
+          "type_str": "Str"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "AnomalyReport",
+      "type_params": [],
+      "value": "{\n    severity: \"info\" | \"warn\" | \"critical\",\n    summary: Str,\n    metric: Str\n}"
+    }
+  ],
+  "version": "0.2.0"
+}

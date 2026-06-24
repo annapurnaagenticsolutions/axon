@@ -1,0 +1,166 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": {
+        "kind": "Semantic",
+        "options": {}
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body": "let context = act ProductDocs.retrieve(query: question, top_k: 5)?\nstore memory.working[\"last_question\"] = question\nlet response = model.complete(AnswerFromDocs(question, context))\n\nif response.escalated {\n    act CreateSupportTicket(title: question, description: response.answer, priority: \"medium\")?\n}\n\nOk(response)",
+          "name": "handle",
+          "params": [
+            {
+              "default": null,
+              "name": "question",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Result<SupportResponse, AgentError>"
+        }
+      ],
+      "model": "anthropic/claude-4",
+      "name": "CustomerSupportAgent",
+      "tools": [
+        "ProductDocs.retrieve",
+        "CreateSupportTicket"
+      ],
+      "workers": null
+    }
+  ],
+  "flows": [],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [
+    {
+      "kind": "import",
+      "names": [
+        "Chunk"
+      ],
+      "source": "axon:types"
+    }
+  ],
+  "metadata": {},
+  "prompts": [
+    {
+      "annotations": [
+        {
+          "args": {
+            "tokens": "900"
+          },
+          "name": "budget"
+        }
+      ],
+      "kind": "prompt",
+      "name": "AnswerFromDocs",
+      "params": [
+        {
+          "default": null,
+          "name": "question",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "context",
+          "type_str": "List<Chunk>"
+        }
+      ],
+      "return_type": "SupportResponse",
+      "template": "Answer the customer question using only the retrieved documentation.\n\nQuestion: {question}\nContext: {context}\n\nReturn answer, confidence, and whether escalation is required."
+    }
+  ],
+  "rags": [
+    {
+      "annotations": [],
+      "chunker": "Chunker::sliding(size: 512, overlap: 64)",
+      "embedder": "@openai/text-embed-3",
+      "kind": "rag",
+      "methods": [
+        {
+          "annotations": [],
+          "body": "store.search(embed(query), top_k)\n    |> rerank(query, model: @cohere/rerank-3)\n    |> filter(chunk => chunk.score > 0.72)",
+          "name": "retrieve",
+          "params": [
+            {
+              "default": null,
+              "name": "query",
+              "type_str": "Str"
+            },
+            {
+              "default": "5",
+              "name": "top_k",
+              "type_str": "Int"
+            }
+          ],
+          "return_type": "List<Chunk>"
+        }
+      ],
+      "name": "ProductDocs",
+      "source": "\"./knowledge_base/**/*.md\"",
+      "store": "VectorDB::sqlite(\"./data/product_docs.db\")"
+    }
+  ],
+  "tools": [
+    {
+      "annotations": [],
+      "body": "http.post(env.SUPPORT_TICKET_API, { title, description, priority })",
+      "docstrings": [
+        "Creates a support ticket in the service desk.",
+        "Use when documentation is missing or confidence is too low."
+      ],
+      "kind": "tool",
+      "name": "CreateSupportTicket",
+      "params": [
+        {
+          "default": null,
+          "name": "title",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "description",
+          "type_str": "Str"
+        },
+        {
+          "default": "\"medium\"",
+          "name": "priority",
+          "type_str": "\"low\" | \"medium\" | \"high\""
+        }
+      ],
+      "return_type": "Result<Str, ToolError>"
+    }
+  ],
+  "type_aliases": [
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "answer",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "confidence",
+          "type_str": "Float"
+        },
+        {
+          "default": null,
+          "name": "escalated",
+          "type_str": "Bool"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "SupportResponse",
+      "type_params": [],
+      "value": "{\n    answer: Str,\n    confidence: Float,\n    escalated: Bool\n}"
+    }
+  ],
+  "version": "0.2.0"
+}

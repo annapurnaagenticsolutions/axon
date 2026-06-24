@@ -1,0 +1,71 @@
+tool RememberFact(key: Str, value: Str) -> Str {
+    /// Stores a fact in semantic memory.
+
+    remember(key, value)
+    "stored"
+}
+
+tool RecallFact(query: Str) -> Str {
+    /// Recalls a fact from semantic memory.
+
+    let results = recall(query, 1)
+    results
+}
+
+tool SendMessage(to: Str, content: Str) -> Str {
+    /// Sends a message to another agent.
+
+    send(to, content)
+    "sent"
+}
+
+tool ReceiveMessage() -> Str {
+    /// Receives a message from another agent.
+
+    receive()
+}
+
+agent Researcher {
+    model: @mock/gpt
+    tools: [RememberFact, RecallFact, SendMessage, ReceiveMessage]
+    memory: Memory<Semantic>
+
+    fn research(topic: Str) -> Str {
+        let fact1 = "Neural networks are inspired by biological brains"
+        let fact2 = "Backpropagation was invented in 1986"
+        act RememberFact(key: "nn_bio", value: fact1)
+        act RememberFact(key: "backprop", value: fact2)
+        act SendMessage(to: "Writer", content: "Research complete on " + topic)
+        "done"
+    }
+}
+
+agent Writer {
+    model: @mock/gpt
+    tools: [RememberFact, RecallFact, SendMessage, ReceiveMessage]
+    memory: Memory<Semantic>
+
+    fn write(topic: Str) -> Str {
+        let msg = act ReceiveMessage()
+        let fact = act RecallFact(query: "neural")
+        fact
+    }
+}
+
+agent Coordinator {
+    model: @mock/gpt
+    tools: [RememberFact, RecallFact, SendMessage, ReceiveMessage]
+    memory: Memory<Semantic>
+
+    fn run(topic: Str) -> Str {
+        delegate Researcher.research(topic: topic)
+        delegate Writer.write(topic: topic)
+    }
+}
+
+flow ResearchPipeline(topic: Str) -> Str {
+    stage Research(topic: Str) -> Str
+    stage Write(topic: Str) -> Str
+
+    Research -> Write
+}

@@ -1,0 +1,78 @@
+
+<h2 class="sr-only">Six design directions for AXON, compared by long-term stability and implementation scope</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:2px 0">
+
+<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+<span style="font-size:11px;padding:2px 9px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-secondary);">Option A</span>
+<span style="font-weight:500;font-size:14px;color:var(--color-text-primary);">MCP-native language</span>
+</div>
+<p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 8px;line-height:1.5">Every .ax file IS an MCP server. tool/resource/prompt keywords map directly to MCP protocol concepts.</p>
+<div style="font-size:11px;background:var(--color-background-secondary);display:inline-block;padding:1px 8px;border-radius:10px;margin-bottom:8px;color:var(--color-text-secondary);">Analog: HTML is to HTTP</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:2px;">Stability &nbsp;●●●○○</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;">Build ease ●●●●○</div>
+<div style="font-size:11px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary);padding-top:8px;">Risk: stability tied to MCP evolution</div>
+</div>
+
+<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+<span style="font-size:11px;padding:2px 9px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-secondary);">Option B</span>
+<span style="font-weight:500;font-size:14px;color:var(--color-text-primary);">MetaMCP orchestrator</span>
+</div>
+<p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 8px;line-height:1.5">Sits above MCP servers. Routes, composes, load-balances, and fails over across the full MCP server graph.</p>
+<div style="font-size:11px;background:var(--color-background-secondary);display:inline-block;padding:1px 8px;border-radius:10px;margin-bottom:8px;color:var(--color-text-secondary);">Analog: Kubernetes is to Docker</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:2px;">Stability &nbsp;●●●○○</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;">Build ease ●●●○○</div>
+<div style="font-size:11px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary);padding-top:8px;">Risk: framework, not language — displaceable</div>
+</div>
+
+<div style="background:var(--color-background-primary);border:2px solid var(--color-border-info);border-radius:var(--border-radius-lg);padding:14px 16px;">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+<span style="font-size:11px;padding:2px 9px;border-radius:20px;background:var(--color-background-info);color:var(--color-text-info);">Option C — recommended</span>
+</div>
+<span style="font-weight:500;font-size:14px;color:var(--color-text-primary);">Dual-mode: ADL + AEL</span>
+<p style="font-size:12px;color:var(--color-text-secondary);margin:6px 0 8px;line-height:1.5">Humans write declarative ADL (agent definitions). LLMs execute imperative AEL (act/think/observe traces). Same language, two modes.</p>
+<div style="font-size:11px;background:var(--color-background-secondary);display:inline-block;padding:1px 8px;border-radius:10px;margin-bottom:8px;color:var(--color-text-secondary);">Analog: SQL is to relational databases</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:2px;">Stability &nbsp;●●●●●</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;">Build ease ●●○○○</div>
+<div style="font-size:11px;color:var(--color-text-info);border-top:0.5px solid var(--color-border-tertiary);padding-top:8px;">Decoupled from any runtime — maps to stable agent theory</div>
+</div>
+
+<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+<span style="font-size:11px;padding:2px 9px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-secondary);">Option D</span>
+<span style="font-weight:500;font-size:14px;color:var(--color-text-primary);">Universal agent IR</span>
+</div>
+<p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 8px;line-height:1.5">Not a source language — an intermediate representation. Python, TypeScript, Java all compile to AXON IR. Any runtime can execute it.</p>
+<div style="font-size:11px;background:var(--color-background-secondary);display:inline-block;padding:1px 8px;border-radius:10px;margin-bottom:8px;color:var(--color-text-secondary);">Analog: LLVM IR, JVM bytecode, WASM</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:2px;">Stability &nbsp;●●●●○</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;">Build ease ●○○○○</div>
+<div style="font-size:11px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary);padding-top:8px;">Risk: IR layers rarely get direct human adoption</div>
+</div>
+
+<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+<span style="font-size:11px;padding:2px 9px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-secondary);">Option E</span>
+<span style="font-weight:500;font-size:14px;color:var(--color-text-primary);">Open living standard</span>
+</div>
+<p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 8px;line-height:1.5">RFC-style specification. Open governance like ECMA/W3C. Multiple competing runtimes implement the AXON spec independently.</p>
+<div style="font-size:11px;background:var(--color-background-secondary);display:inline-block;padding:1px 8px;border-radius:10px;margin-bottom:8px;color:var(--color-text-secondary);">Analog: HTTP, OpenAPI, GraphQL</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:2px;">Stability &nbsp;●●●●●</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;">Build ease ●●○○○</div>
+<div style="font-size:11px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary);padding-top:8px;">Risk: needs institutional buy-in before you can build</div>
+</div>
+
+<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+<span style="font-size:11px;padding:2px 9px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-secondary);">Option F</span>
+<span style="font-weight:500;font-size:14px;color:var(--color-text-primary);">Homoiconic / self-extending</span>
+</div>
+<p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 8px;line-height:1.5">Agents write AXON. AXON is the agent's thought format. Code equals data — agents compose and modify other agents at runtime.</p>
+<div style="font-size:11px;background:var(--color-background-secondary);display:inline-block;padding:1px 8px;border-radius:10px;margin-bottom:8px;color:var(--color-text-secondary);">Analog: Lisp homoiconicity, Smalltalk</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:2px;">Stability &nbsp;●●●●○</div>
+<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;">Build ease ●○○○○</div>
+<div style="font-size:11px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary);padding-top:8px;">Risk: safety/alignment challenges are profound</div>
+</div>
+
+</div>
+<p style="font-size:12px;color:var(--color-text-tertiary);margin:10px 0 0;text-align:center">The strongest long-term design combines C + A + E: dual-mode language targeting MCP, governed as an open standard</p>

@@ -1,0 +1,469 @@
+[
+  {
+    "node": "ImportDecl",
+    "names": [
+      "Chunk"
+    ],
+    "source": "axon:types"
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "ResearchQuery",
+    "type_params": [],
+    "value": "{ topic: Str, depth: \"quick\" | \"deep\" = \"quick\" }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "topic",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "depth",
+        "type_str": "\"quick\" | \"deep\"",
+        "default": "\"quick\""
+      }
+    ],
+    "line": 12
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "SearchResult",
+    "type_params": [],
+    "value": "{ source: Str, snippet: Str, relevance: Float }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "source",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "snippet",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "relevance",
+        "type_str": "Float",
+        "default": null
+      }
+    ],
+    "line": 17
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "FactCheckResult",
+    "type_params": [],
+    "value": "{ claim: Str, verdict: \"confirmed\" | \"plausible\" | \"disputed\" | \"unverified\", confidence: Float }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "claim",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "verdict",
+        "type_str": "\"confirmed\" | \"plausible\" | \"disputed\" | \"unverified\"",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "confidence",
+        "type_str": "Float",
+        "default": null
+      }
+    ],
+    "line": 23
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "ResearchReport",
+    "type_params": [],
+    "value": "{ topic: Str, summary: Str, sources: List<SearchResult>, facts: List<FactCheckResult>, confidence: Float }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "topic",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "summary",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "sources",
+        "type_str": "List<SearchResult>",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "facts",
+        "type_str": "List<FactCheckResult>",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "confidence",
+        "type_str": "Float",
+        "default": null
+      }
+    ],
+    "line": 29
+  },
+  {
+    "node": "ToolDecl",
+    "name": "WebSearch",
+    "params": [
+      {
+        "node": "Param",
+        "name": "query",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "max_results",
+        "type_str": "Int",
+        "default": "5"
+      }
+    ],
+    "return_type": "Result<List<SearchResult>, ToolError>",
+    "docstrings": [
+      "Search the web for relevant sources."
+    ],
+    "body": "http.get(\"https://api.search.example/v1\", { q: query, limit: max_results })\n    |> map(result => {\n        source: result.url,\n        snippet: result.snippet,\n        relevance: result.score\n    })",
+    "annotations": [],
+    "line": 39,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "ExtractFacts",
+    "params": [
+      {
+        "node": "Param",
+        "name": "text",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<List<Str>, ToolError>",
+    "docstrings": [
+      "Extract factual claims from a text passage."
+    ],
+    "body": "@extract_claims(text)",
+    "annotations": [],
+    "line": 49,
+    "parsed_body": null
+  },
+  {
+    "node": "RagDecl",
+    "name": "ResearchDocs",
+    "source": "\"./knowledge_base/**/*.md\"",
+    "chunker": "Chunker::sliding(size: 1024, overlap: 128)",
+    "embedder": "@openai/text-embed-3",
+    "store": "VectorDB::in_memory()",
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "retrieve",
+        "params": [
+          {
+            "node": "Param",
+            "name": "query",
+            "type_str": "Str",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "top_k",
+            "type_str": "Int",
+            "default": "3"
+          }
+        ],
+        "return_type": "List<Chunk>",
+        "annotations": [],
+        "body": "store.search(embed(query), top_k)\n    |> filter(chunk => chunk.score > 0.65)",
+        "parsed_body": null
+      }
+    ],
+    "line": 56
+  },
+  {
+    "node": "AgentDecl",
+    "name": "QueryPlanner",
+    "model": "@openai/gpt-4o-mini",
+    "tools": [
+      "ResearchDocs.retrieve"
+    ],
+    "memory": null,
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "plan",
+        "params": [
+          {
+            "node": "Param",
+            "name": "query",
+            "type_str": "ResearchQuery",
+            "default": null
+          }
+        ],
+        "return_type": "Result<List<Str>, AgentError>",
+        "annotations": [],
+        "body": "/// Break a research topic into sub-queries.\nlet context = act ResearchDocs.retrieve(query: query.topic)?\nlet plan = @decompose(topic: query.topic, context: context, depth: query.depth)\nOk(plan)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 70
+  },
+  {
+    "node": "AgentDecl",
+    "name": "ResearchAgent",
+    "model": "@anthropic/claude-4",
+    "tools": [
+      "WebSearch",
+      "ResearchDocs.retrieve"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "Episodic",
+      "options": {
+        "max_events": "500"
+      }
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "investigate",
+        "params": [
+          {
+            "node": "Param",
+            "name": "sub_query",
+            "type_str": "Str",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "depth",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<List<SearchResult>, AgentError>",
+        "annotations": [],
+        "body": "/// Search and synthesize findings for a sub-query.\nlet web_results = act WebSearch(query: sub_query, max_results: 5)?\nlet docs = act ResearchDocs.retrieve(query: sub_query, top_k: 3)?\n\nthink f\"Found {len(web_results)} web results and {len(docs)} internal docs for: {sub_query}\"\n\nstore memory.append({ sub_query, web_results, docs })\nOk(web_results)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 82
+  },
+  {
+    "node": "AgentDecl",
+    "name": "SummarizerAgent",
+    "model": "@anthropic/claude-haiku",
+    "tools": [],
+    "memory": null,
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "summarize",
+        "params": [
+          {
+            "node": "Param",
+            "name": "results",
+            "type_str": "List<SearchResult>",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "topic",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<Str, AgentError>",
+        "annotations": [],
+        "body": "/// Summarize research findings into a coherent narrative.\nlet combined = results\n    |> map(r => r.snippet)\n    |> join(\"\\n\\n\")\n\nlet summary = @synthesize(topic: topic, sources: combined)\nOk(summary)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 99
+  },
+  {
+    "node": "AgentDecl",
+    "name": "FactCheckerAgent",
+    "model": "@openai/gpt-4o-mini",
+    "tools": [
+      "WebSearch"
+    ],
+    "memory": null,
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "verify",
+        "params": [
+          {
+            "node": "Param",
+            "name": "claim",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<FactCheckResult, AgentError>",
+        "annotations": [],
+        "body": "/// Fact-check a single claim against the web.\nlet evidence = act WebSearch(query: claim, max_results: 3)?\nlet verdict = @verify_claim(claim: claim, evidence: evidence)\n\nobserve \"fact_check\" { claim, verdict }\nOk(verdict)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 114
+  },
+  {
+    "node": "FlowDecl",
+    "name": "ResearchPipeline",
+    "params": [
+      {
+        "node": "Param",
+        "name": "input",
+        "type_str": "ResearchQuery",
+        "default": null
+      }
+    ],
+    "return_type": "ResearchReport",
+    "annotations": [],
+    "stages": [
+      {
+        "node": "StageDecl",
+        "name": "Plan",
+        "params": [
+          {
+            "node": "Param",
+            "name": "q",
+            "type_str": "ResearchQuery",
+            "default": null
+          }
+        ],
+        "return_type": "List<Str>",
+        "line": 131
+      },
+      {
+        "node": "StageDecl",
+        "name": "Investigate",
+        "params": [
+          {
+            "node": "Param",
+            "name": "queries",
+            "type_str": "List<Str>",
+            "default": null
+          }
+        ],
+        "return_type": "List<SearchResult>",
+        "line": 132
+      },
+      {
+        "node": "StageDecl",
+        "name": "Summarize",
+        "params": [
+          {
+            "node": "Param",
+            "name": "results",
+            "type_str": "List<SearchResult>",
+            "default": null
+          }
+        ],
+        "return_type": "Str",
+        "line": 133
+      },
+      {
+        "node": "StageDecl",
+        "name": "Verify",
+        "params": [
+          {
+            "node": "Param",
+            "name": "summary",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "List<FactCheckResult>",
+        "line": 134
+      },
+      {
+        "node": "StageDecl",
+        "name": "Compile",
+        "params": [
+          {
+            "node": "Param",
+            "name": "facts",
+            "type_str": "List<FactCheckResult>",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "summary",
+            "type_str": "Str",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "sources",
+            "type_str": "List<SearchResult>",
+            "default": null
+          }
+        ],
+        "return_type": "ResearchReport",
+        "line": 135
+      }
+    ],
+    "body": "Plan -> Investigate -> Summarize -> Verify -> Compile",
+    "parsed_body": null,
+    "line": 130
+  },
+  {
+    "node": "AgentDecl",
+    "name": "ResearchCoordinator",
+    "model": "@anthropic/claude-4",
+    "tools": [],
+    "memory": null,
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "run",
+        "params": [
+          {
+            "node": "Param",
+            "name": "query",
+            "type_str": "ResearchQuery",
+            "default": null
+          }
+        ],
+        "return_type": "Result<ResearchReport, AgentError>",
+        "annotations": [],
+        "body": "/// Coordinate the full research pipeline.\nthink f\"Starting research on: {query.topic} (depth: {query.depth})\"\n\nlet planner = spawn QueryPlanner()\nlet plan = await planner.plan(query)?\n\nlet worker_pool = pool(size: 3, target: ResearchAgent)\nlet results = []\nfor sub in plan {\n    let result = await worker_pool.investigate(sub, query.depth)?\n    results = results + result\n}\n\nlet summarizer = spawn SummarizerAgent()\nlet summary = await summarizer.summarize(results, query.topic)?\n\nlet claims = act ExtractFacts(text: summary)?\nlet checker = spawn FactCheckerAgent()\nlet facts = []\nfor claim in claims {\n    let verdict = await checker.verify(claim)?\n    facts = facts + [verdict]\n}\n\nlet avg_confidence = facts\n    |> map(f => f.confidence)\n    |> avg()\n\nlet report = ResearchReport {\n    topic: query.topic,\n    summary: summary,\n    sources: results,\n    facts: facts,\n    confidence: avg_confidence\n}\n\nstore \"last_report\" report\nthink f\"Research complete. Confidence: {avg_confidence}\"\n\nOk(report)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 142
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "diagnostics": [
+    {
+      "code": "unknown-prompt-variable",
+      "hint": "",
+      "line": 2,
+      "message": "prompt 'P' references unknown template variable '{missing}'",
+      "related": [],
+      "severity": "error"
+    }
+  ],
+  "kind": "validation",
+  "ok": false
+}

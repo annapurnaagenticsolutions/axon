@@ -1,0 +1,231 @@
+{
+  "version": "0.2.0",
+  "imports": [],
+  "type_aliases": [],
+  "rags": [],
+  "prompts": [],
+  "tools": [
+    {
+      "kind": "tool",
+      "name": "RememberFact",
+      "params": [
+        {
+          "name": "key",
+          "type_str": "Str",
+          "default": null
+        },
+        {
+          "name": "value",
+          "type_str": "Str",
+          "default": null
+        }
+      ],
+      "return_type": "Str",
+      "docstrings": [
+        "Stores a fact in semantic memory."
+      ],
+      "body": "remember(key, value)\n\"stored\"",
+      "annotations": []
+    },
+    {
+      "kind": "tool",
+      "name": "RecallFact",
+      "params": [
+        {
+          "name": "query",
+          "type_str": "Str",
+          "default": null
+        }
+      ],
+      "return_type": "Str",
+      "docstrings": [
+        "Recalls a fact from semantic memory."
+      ],
+      "body": "let results = recall(query, 1)\nresults",
+      "annotations": []
+    },
+    {
+      "kind": "tool",
+      "name": "SendMessage",
+      "params": [
+        {
+          "name": "to",
+          "type_str": "Str",
+          "default": null
+        },
+        {
+          "name": "content",
+          "type_str": "Str",
+          "default": null
+        }
+      ],
+      "return_type": "Str",
+      "docstrings": [
+        "Sends a message to another agent."
+      ],
+      "body": "send(to, content)\n\"sent\"",
+      "annotations": []
+    },
+    {
+      "kind": "tool",
+      "name": "ReceiveMessage",
+      "params": [],
+      "return_type": "Str",
+      "docstrings": [
+        "Receives a message from another agent."
+      ],
+      "body": "receive()",
+      "annotations": []
+    }
+  ],
+  "agents": [
+    {
+      "kind": "agent",
+      "name": "Researcher",
+      "model": "mock/gpt",
+      "tools": [
+        "RememberFact",
+        "RecallFact",
+        "SendMessage",
+        "ReceiveMessage"
+      ],
+      "memory": {
+        "kind": "Semantic",
+        "options": {}
+      },
+      "methods": [
+        {
+          "name": "research",
+          "params": [
+            {
+              "name": "topic",
+              "type_str": "Str",
+              "default": null
+            }
+          ],
+          "return_type": "Str",
+          "body": "let fact1 = \"Neural networks are inspired by biological brains\"\nlet fact2 = \"Backpropagation was invented in 1986\"\nact RememberFact(key: \"nn_bio\", value: fact1)\nact RememberFact(key: \"backprop\", value: fact2)\nact SendMessage(to: \"Writer\", content: \"Research complete on \" + topic)\n\"done\"",
+          "annotations": []
+        }
+      ],
+      "annotations": [],
+      "workers": null
+    },
+    {
+      "kind": "agent",
+      "name": "Writer",
+      "model": "mock/gpt",
+      "tools": [
+        "RememberFact",
+        "RecallFact",
+        "SendMessage",
+        "ReceiveMessage"
+      ],
+      "memory": {
+        "kind": "Semantic",
+        "options": {}
+      },
+      "methods": [
+        {
+          "name": "write",
+          "params": [
+            {
+              "name": "topic",
+              "type_str": "Str",
+              "default": null
+            }
+          ],
+          "return_type": "Str",
+          "body": "let msg = act ReceiveMessage()\nlet fact = act RecallFact(query: \"neural\")\nfact",
+          "annotations": []
+        }
+      ],
+      "annotations": [],
+      "workers": null
+    },
+    {
+      "kind": "agent",
+      "name": "Coordinator",
+      "model": "mock/gpt",
+      "tools": [
+        "RememberFact",
+        "RecallFact",
+        "SendMessage",
+        "ReceiveMessage"
+      ],
+      "memory": {
+        "kind": "Semantic",
+        "options": {}
+      },
+      "methods": [
+        {
+          "name": "run",
+          "params": [
+            {
+              "name": "topic",
+              "type_str": "Str",
+              "default": null
+            }
+          ],
+          "return_type": "Str",
+          "body": "delegate Researcher.research(topic: topic)\ndelegate Writer.write(topic: topic)",
+          "annotations": []
+        }
+      ],
+      "annotations": [],
+      "workers": null
+    }
+  ],
+  "flows": [
+    {
+      "kind": "flow",
+      "name": "ResearchPipeline",
+      "params": [
+        {
+          "name": "topic",
+          "type_str": "Str",
+          "default": null
+        }
+      ],
+      "return_type": "Str",
+      "stages": [
+        {
+          "name": "Research",
+          "params": [
+            {
+              "name": "topic",
+              "type_str": "Str",
+              "default": null
+            }
+          ],
+          "return_type": "Str"
+        },
+        {
+          "name": "Write",
+          "params": [
+            {
+              "name": "topic",
+              "type_str": "Str",
+              "default": null
+            }
+          ],
+          "return_type": "Str"
+        }
+      ],
+      "edges": [
+        {
+          "from_stage": "Research",
+          "to_stage": "Write"
+        }
+      ],
+      "annotations": []
+    }
+  ],
+  "global_security": {
+    "capabilities": [],
+    "approval_gates": [],
+    "max_token_budget": null,
+    "max_cost_budget_usd": null
+  },
+  "metadata": {}
+}

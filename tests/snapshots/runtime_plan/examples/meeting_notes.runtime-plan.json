@@ -1,0 +1,203 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": "Episodic",
+      "memory_options": {
+        "max_events": "5000"
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 7,
+          "has_body": true,
+          "name": "process",
+          "params": [
+            {
+              "default": null,
+              "name": "audio_path",
+              "type": "Str"
+            },
+            {
+              "default": null,
+              "name": "title",
+              "type": "Str"
+            }
+          ],
+          "return_type": "Result<MeetingNotes, AgentError>"
+        }
+      ],
+      "model": "@anthropic/claude-4",
+      "name": "MeetingNotesAgent",
+      "tools": [
+        "TranscribeAudio",
+        "SaveNotes"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "enabled": true,
+      "name": "declaration_inspection",
+      "reason": "safe parsed declaration summaries are allowed"
+    },
+    {
+      "enabled": false,
+      "name": "method_execution",
+      "reason": "AXON method bodies are not executed yet"
+    },
+    {
+      "enabled": false,
+      "name": "provider_calls",
+      "reason": "model/provider calls require a future provider runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "tool_dispatch",
+      "reason": "real tool dispatch requires a future tool runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "memory_mutation",
+      "reason": "memory writes are not applied by the current runtime plan"
+    },
+    {
+      "enabled": false,
+      "name": "rag_indexing",
+      "reason": "RAG indexing is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "rag_retrieval",
+      "reason": "RAG retrieval is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "flow_execution",
+      "reason": "flow orchestration is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "trace_replay",
+      "reason": "trace replay is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "secret_resolution",
+      "reason": "environment secrets are not resolved by runtime planning"
+    },
+    {
+      "enabled": false,
+      "name": "fastmcp_runtime_import",
+      "reason": "FastMCP is not imported by compiler/runtime planning core"
+    }
+  ],
+  "counts": {
+    "agents": 1,
+    "flows": 0,
+    "imports": 0,
+    "prompts": 2,
+    "rags": 0,
+    "tools": 2,
+    "type_aliases": 2
+  },
+  "flows": [],
+  "imports": [],
+  "notes": [
+    "runtime plan is inspection-only",
+    "all executable capabilities remain disabled by Runtime RFC #001"
+  ],
+  "prompts": [
+    {
+      "annotations": [
+        "budget"
+      ],
+      "name": "SummarizeTranscript",
+      "params": [
+        {
+          "default": null,
+          "name": "transcript",
+          "type": "Str"
+        },
+        {
+          "default": "\"general\"",
+          "name": "audience",
+          "type": "Str"
+        }
+      ],
+      "return_type": "Str",
+      "template_line_count": 3
+    },
+    {
+      "annotations": [
+        "budget"
+      ],
+      "name": "ExtractActionItems",
+      "params": [
+        {
+          "default": null,
+          "name": "transcript",
+          "type": "Str"
+        }
+      ],
+      "return_type": "List<ActionItem>",
+      "template_line_count": 3
+    }
+  ],
+  "rags": [],
+  "source_path": "examples/meeting_notes.ax",
+  "tools": [
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "docstring_count": 2,
+      "executable": false,
+      "has_body": true,
+      "name": "TranscribeAudio",
+      "params": [
+        {
+          "default": null,
+          "name": "audio_path",
+          "type": "Str"
+        }
+      ],
+      "return_type": "Result<Str, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "docstring_count": 2,
+      "executable": false,
+      "has_body": true,
+      "name": "SaveNotes",
+      "params": [
+        {
+          "default": null,
+          "name": "title",
+          "type": "Str"
+        },
+        {
+          "default": null,
+          "name": "notes",
+          "type": "MeetingNotes"
+        }
+      ],
+      "return_type": "Result<Str, ToolError>"
+    }
+  ],
+  "type_aliases": [
+    {
+      "field_count": 3,
+      "name": "ActionItem",
+      "type_params": [],
+      "value": "{ owner: Str, task: Str, deadline: Str }"
+    },
+    {
+      "field_count": 3,
+      "name": "MeetingNotes",
+      "type_params": [],
+      "value": "{ summary: Str, decisions: List<Str>, action_items: List<ActionItem> }"
+    }
+  ]
+}

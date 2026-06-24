@@ -1,0 +1,63 @@
+[
+  {
+    "node": "ToolDecl",
+    "name": "WebSearch",
+    "params": [
+      {
+        "node": "Param",
+        "name": "query",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "max_results",
+        "type_str": "Int",
+        "default": "5"
+      }
+    ],
+    "return_type": "Result<List<Any>, ToolError>",
+    "docstrings": [
+      "Searches the web for current information."
+    ],
+    "body": "http.get(\"https://api.search.example?q={query}&n={max_results}\")",
+    "annotations": [],
+    "line": 1,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "ResearchAgent",
+    "model": "@anthropic/claude-4",
+    "tools": [
+      "WebSearch"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "ShortTerm",
+      "options": {
+        "capacity": "500"
+      }
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "run",
+        "params": [
+          {
+            "node": "Param",
+            "name": "topic",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<(), AgentError>",
+        "annotations": [],
+        "body": "think \"Need to gather current information\"\nlet results = act WebSearch(query: topic, max_results: 5)?\nobserve results: [{ title: \"placeholder\" }]\nstore memory.working[\"results\"] = results\nOk(())",
+        "parsed_body": null
+      }
+    ],
+    "line": 6
+  }
+]

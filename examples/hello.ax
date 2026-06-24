@@ -1,0 +1,11 @@
+tool Greet(name: Str) -> Str {
+    /// Says hello to someone.
+    "Hello, {name}!"
+}
+
+agent Bot {
+    model: @anthropic/claude-4
+    tools: [Greet]
+
+    fn run(q: Str) -> Str { q }
+}

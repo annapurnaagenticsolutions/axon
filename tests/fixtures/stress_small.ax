@@ -1,0 +1,1719 @@
+tool Tool0(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 0"
+    "line of body text for tool 0"
+    "line of body text for tool 0"
+}
+
+tool Tool1(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 1"
+    "line of body text for tool 1"
+    "line of body text for tool 1"
+}
+
+tool Tool2(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 2"
+    "line of body text for tool 2"
+    "line of body text for tool 2"
+}
+
+tool Tool3(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 3"
+    "line of body text for tool 3"
+    "line of body text for tool 3"
+}
+
+tool Tool4(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 4"
+    "line of body text for tool 4"
+    "line of body text for tool 4"
+}
+
+tool Tool5(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 5"
+    "line of body text for tool 5"
+    "line of body text for tool 5"
+}
+
+tool Tool6(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 6"
+    "line of body text for tool 6"
+    "line of body text for tool 6"
+}
+
+tool Tool7(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 7"
+    "line of body text for tool 7"
+    "line of body text for tool 7"
+}
+
+tool Tool8(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 8"
+    "line of body text for tool 8"
+    "line of body text for tool 8"
+}
+
+tool Tool9(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 9"
+    "line of body text for tool 9"
+    "line of body text for tool 9"
+}
+
+tool Tool10(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 10"
+    "line of body text for tool 10"
+    "line of body text for tool 10"
+}
+
+tool Tool11(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 11"
+    "line of body text for tool 11"
+    "line of body text for tool 11"
+}
+
+tool Tool12(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 12"
+    "line of body text for tool 12"
+    "line of body text for tool 12"
+}
+
+tool Tool13(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 13"
+    "line of body text for tool 13"
+    "line of body text for tool 13"
+}
+
+tool Tool14(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 14"
+    "line of body text for tool 14"
+    "line of body text for tool 14"
+}
+
+tool Tool15(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 15"
+    "line of body text for tool 15"
+    "line of body text for tool 15"
+}
+
+tool Tool16(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 16"
+    "line of body text for tool 16"
+    "line of body text for tool 16"
+}
+
+tool Tool17(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 17"
+    "line of body text for tool 17"
+    "line of body text for tool 17"
+}
+
+tool Tool18(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 18"
+    "line of body text for tool 18"
+    "line of body text for tool 18"
+}
+
+tool Tool19(x: Str, y: Int = 0) -> Str {
+    "line of body text for tool 19"
+    "line of body text for tool 19"
+    "line of body text for tool 19"
+}
+
+agent Agent0 {
+    model: @mock/gpt-0
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent1 {
+    model: @mock/gpt-1
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent2 {
+    model: @mock/gpt-2
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent3 {
+    model: @mock/gpt-3
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent4 {
+    model: @mock/gpt-4
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent5 {
+    model: @mock/gpt-0
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent6 {
+    model: @mock/gpt-1
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent7 {
+    model: @mock/gpt-2
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent8 {
+    model: @mock/gpt-3
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent9 {
+    model: @mock/gpt-4
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent10 {
+    model: @mock/gpt-0
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent11 {
+    model: @mock/gpt-1
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent12 {
+    model: @mock/gpt-2
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent13 {
+    model: @mock/gpt-3
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent14 {
+    model: @mock/gpt-4
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent15 {
+    model: @mock/gpt-0
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent16 {
+    model: @mock/gpt-1
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent17 {
+    model: @mock/gpt-2
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent18 {
+    model: @mock/gpt-3
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent19 {
+    model: @mock/gpt-4
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent20 {
+    model: @mock/gpt-0
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent21 {
+    model: @mock/gpt-1
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent22 {
+    model: @mock/gpt-2
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent23 {
+    model: @mock/gpt-3
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent24 {
+    model: @mock/gpt-4
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent25 {
+    model: @mock/gpt-0
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent26 {
+    model: @mock/gpt-1
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent27 {
+    model: @mock/gpt-2
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent28 {
+    model: @mock/gpt-3
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent29 {
+    model: @mock/gpt-4
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent30 {
+    model: @mock/gpt-0
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent31 {
+    model: @mock/gpt-1
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent32 {
+    model: @mock/gpt-2
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent33 {
+    model: @mock/gpt-3
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent34 {
+    model: @mock/gpt-4
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent35 {
+    model: @mock/gpt-0
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent36 {
+    model: @mock/gpt-1
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent37 {
+    model: @mock/gpt-2
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent38 {
+    model: @mock/gpt-3
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent39 {
+    model: @mock/gpt-4
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent40 {
+    model: @mock/gpt-0
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent41 {
+    model: @mock/gpt-1
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent42 {
+    model: @mock/gpt-2
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent43 {
+    model: @mock/gpt-3
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent44 {
+    model: @mock/gpt-4
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent45 {
+    model: @mock/gpt-0
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent46 {
+    model: @mock/gpt-1
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent47 {
+    model: @mock/gpt-2
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent48 {
+    model: @mock/gpt-3
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}
+
+agent Agent49 {
+    model: @mock/gpt-4
+    tools: [Tool0, Tool1, Tool2]
+    memory: Memory<Semantic>
+
+    fn method0(q: Str) -> Str {
+        "line of body text for method 0"
+        "line of body text for method 0"
+        "line of body text for method 0"
+    }
+    fn method1(q: Str) -> Str {
+        "line of body text for method 1"
+        "line of body text for method 1"
+        "line of body text for method 1"
+    }
+    fn method2(q: Str) -> Str {
+        "line of body text for method 2"
+        "line of body text for method 2"
+        "line of body text for method 2"
+    }
+    fn method3(q: Str) -> Str {
+        "line of body text for method 3"
+        "line of body text for method 3"
+        "line of body text for method 3"
+    }
+    fn method4(q: Str) -> Str {
+        "line of body text for method 4"
+        "line of body text for method 4"
+        "line of body text for method 4"
+    }
+}

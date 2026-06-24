@@ -1,0 +1,18 @@
+tool WebSearch(query: Str, max_results: Int = 5) -> Result<List<Any>, ToolError> {
+    /// Searches the web for current information.
+    http.get("https://api.search.example?q={query}&n={max_results}")
+}
+
+agent ResearchAgent {
+    model: @anthropic/claude-4
+    tools: [WebSearch]
+    memory: Memory<ShortTerm>(capacity: 500)
+
+    fn run(topic: Str) -> Result<(), AgentError> {
+        think "Need to gather current information"
+        let results = act WebSearch(query: topic, max_results: 5)?
+        observe results: [{ title: "placeholder" }]
+        store memory.working["results"] = results
+        Ok(())
+    }
+}

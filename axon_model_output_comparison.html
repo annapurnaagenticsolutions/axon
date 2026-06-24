@@ -1,0 +1,96 @@
+
+<h2 class="sr-only">Comparison of Gemini, Claude, and GPT-5.5 AXON outputs across 13 syntax constructs</h2>
+<div style="font-size:12px;margin-bottom:8px;color:var(--color-text-secondary);display:flex;gap:16px;padding:0 4px;">
+  <span>🟢 Correct &nbsp; 🟡 Minor deviation &nbsp; 🔴 Missing / wrong</span>
+</div>
+<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3px;">
+
+<!-- Header -->
+<div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);padding:6px 8px;">Construct</div>
+<div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-align:center;padding:6px 4px;">Gemini</div>
+<div style="font-size:11px;font-weight:500;color:var(--color-text-info);text-align:center;padding:6px 4px;">Claude</div>
+<div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-align:center;padding:6px 4px;">GPT-5.5</div>
+
+<!-- Row 1 -->
+<div style="font-size:12px;padding:7px 8px;background:var(--color-background-secondary);border-radius:4px 0 0 4px;">act ToolName(...) for tool calls</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟢</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟢</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);border-radius:0 4px 4px 0;">🟢</div>
+
+<!-- Row 2 -->
+<div style="font-size:12px;padding:7px 8px;">store memory.working[key] = value</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+
+<!-- Row 3 -->
+<div style="font-size:12px;padding:7px 8px;background:var(--color-background-secondary);border-radius:4px 0 0 4px;">memory.get().unwrap_or()</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟢</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟢</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);border-radius:0 4px 4px 0;">🟢</div>
+
+<!-- Row 4 -->
+<div style="font-size:12px;padding:7px 8px;">? error propagation</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+
+<!-- Row 5 -->
+<div style="font-size:12px;padding:7px 8px;background:var(--color-background-secondary);border-radius:4px 0 0 4px;">/// docstrings on tools</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟢</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟢</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);border-radius:0 4px 4px 0;">🟢</div>
+
+<!-- Row 6 -->
+<div style="font-size:12px;padding:7px 8px;">@budget(tokens: N) on prompts</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+<div style="text-align:center;padding:7px 4px;">🔴 skipped</div>
+
+<!-- Row 7 -->
+<div style="font-size:12px;padding:7px 8px;background:var(--color-background-secondary);border-radius:4px 0 0 4px;">@schedule + @trace annotations</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟢</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟢</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);border-radius:0 4px 4px 0;">🟢</div>
+
+<!-- Row 8 -->
+<div style="font-size:12px;padding:7px 8px;">model: @provider/name</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+
+<!-- Row 9 -->
+<div style="font-size:12px;padding:7px 8px;background:var(--color-background-secondary);border-radius:4px 0 0 4px;">"a" | "b" literal union types</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟢</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟢</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);border-radius:0 4px 4px 0;">🟢</div>
+
+<!-- Row 10 -->
+<div style="font-size:12px;padding:7px 8px;">{variable} string interpolation</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+<div style="text-align:center;padding:7px 4px;">🟢</div>
+
+<!-- Row 11 -->
+<div style="font-size:12px;padding:7px 8px;background:var(--color-background-secondary);border-radius:4px 0 0 4px;">think keyword (AEL)</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟡 bare</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟡 bare</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);border-radius:0 4px 4px 0;">🔴 skipped</div>
+
+<!-- Row 12 -->
+<div style="font-size:12px;padding:7px 8px;">Custom type definitions</div>
+<div style="text-align:center;padding:7px 4px;">🔴 used Any</div>
+<div style="text-align:center;padding:7px 4px;">🟡 assumed</div>
+<div style="text-align:center;padding:7px 4px;">🟢 defined</div>
+
+<!-- Row 13 -->
+<div style="font-size:12px;padding:7px 8px;background:var(--color-background-secondary);border-radius:4px 0 0 4px;">Time / now() built-in</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🔴 missing</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);">🟡 now()</div>
+<div style="text-align:center;padding:7px 4px;background:var(--color-background-secondary);border-radius:0 4px 4px 0;">🟡 @now()</div>
+
+</div>
+<div style="margin-top:10px;padding:10px 14px;background:var(--color-background-success);border-radius:var(--border-radius-md);">
+  <div style="font-size:13px;font-weight:500;color:var(--color-text-success);">10 of 13 constructs: full convergence across all 3 models 🟢</div>
+  <div style="font-size:11px;color:var(--color-text-success);margin-top:2px;">3 gaps surfaced — all small, all fixable in the spec before Phase 1</div>
+</div>

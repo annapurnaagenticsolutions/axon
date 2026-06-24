@@ -1,0 +1,201 @@
+[
+  {
+    "node": "TypeAliasDecl",
+    "name": "ActionItem",
+    "type_params": [],
+    "value": "{ owner: Str, task: Str, deadline: Str }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "owner",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "task",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "deadline",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "line": 1
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "MeetingNotes",
+    "type_params": [],
+    "value": "{ summary: Str, decisions: List<Str>, action_items: List<ActionItem> }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "summary",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "decisions",
+        "type_str": "List<Str>",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "action_items",
+        "type_str": "List<ActionItem>",
+        "default": null
+      }
+    ],
+    "line": 7
+  },
+  {
+    "node": "PromptDecl",
+    "name": "SummarizeTranscript",
+    "params": [
+      {
+        "node": "Param",
+        "name": "transcript",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "audience",
+        "type_str": "Str",
+        "default": "\"general\""
+      }
+    ],
+    "return_type": "Str",
+    "template": "Summarize the meeting transcript for a {audience} audience.\n\nTranscript:\n{transcript}",
+    "annotations": [
+      {
+        "node": "Annotation",
+        "name": "budget",
+        "args": {
+          "tokens": "700"
+        }
+      }
+    ],
+    "line": 13
+  },
+  {
+    "node": "PromptDecl",
+    "name": "ExtractActionItems",
+    "params": [
+      {
+        "node": "Param",
+        "name": "transcript",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "List<ActionItem>",
+    "template": "Extract action items from this meeting transcript.\n\nTranscript:\n{transcript}",
+    "annotations": [
+      {
+        "node": "Annotation",
+        "name": "budget",
+        "args": {
+          "tokens": "500"
+        }
+      }
+    ],
+    "line": 22
+  },
+  {
+    "node": "ToolDecl",
+    "name": "TranscribeAudio",
+    "params": [
+      {
+        "node": "Param",
+        "name": "audio_path",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Str, ToolError>",
+    "docstrings": [
+      "Transcribes an audio file into text.",
+      "Use when the meeting input is an audio recording."
+    ],
+    "body": "audio.transcribe(audio_path)",
+    "annotations": [],
+    "line": 31,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "SaveNotes",
+    "params": [
+      {
+        "node": "Param",
+        "name": "title",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "notes",
+        "type_str": "MeetingNotes",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Str, ToolError>",
+    "docstrings": [
+      "Saves meeting notes to a workspace page.",
+      "Use after summary, decisions, and action items are extracted."
+    ],
+    "body": "notion.save(title, notes)",
+    "annotations": [],
+    "line": 37,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "MeetingNotesAgent",
+    "model": "@anthropic/claude-4",
+    "tools": [
+      "TranscribeAudio",
+      "SaveNotes"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "Episodic",
+      "options": {
+        "max_events": "5000"
+      }
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "process",
+        "params": [
+          {
+            "node": "Param",
+            "name": "audio_path",
+            "type_str": "Str",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "title",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<MeetingNotes, AgentError>",
+        "annotations": [],
+        "body": "let transcript = act TranscribeAudio(audio_path: audio_path)?\nlet summary = model.complete(SummarizeTranscript(transcript, audience: \"engineering\"))\nlet action_items = model.complete(ExtractActionItems(transcript))\nlet notes = MeetingNotes { summary, decisions: [], action_items }\nlet url = act SaveNotes(title: title, notes: notes)?\nstore memory.append(url)\nOk(notes)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 43
+  }
+]

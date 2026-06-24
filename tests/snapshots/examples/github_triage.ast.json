@@ -1,0 +1,242 @@
+[
+  {
+    "node": "ImportDecl",
+    "names": [
+      "now"
+    ],
+    "source": "axon:time"
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "Issue",
+    "type_params": [],
+    "value": "{ number: Int, title: Str, body: Str, labels: List<Str>, author: Str }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "number",
+        "type_str": "Int",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "title",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "body",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "labels",
+        "type_str": "List<Str>",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "author",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "line": 3
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "IssueDecision",
+    "type_params": [],
+    "value": "{ priority: \"low\" | \"medium\" | \"high\" | \"critical\", assignee: Str, rationale: Str }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "priority",
+        "type_str": "\"low\" | \"medium\" | \"high\" | \"critical\"",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "assignee",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "rationale",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "line": 11
+  },
+  {
+    "node": "PromptDecl",
+    "name": "ClassifyIssue",
+    "params": [
+      {
+        "node": "Param",
+        "name": "issue",
+        "type_str": "Issue",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "team_context",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "IssueDecision",
+    "template": "Classify this GitHub issue and choose an assignee.\n\nIssue title: {issue.title}\nIssue body: {issue.body}\nTeam context: {team_context}\n\nReturn priority, assignee, and rationale.",
+    "annotations": [
+      {
+        "node": "Annotation",
+        "name": "budget",
+        "args": {
+          "tokens": "700"
+        }
+      }
+    ],
+    "line": 17
+  },
+  {
+    "node": "ToolDecl",
+    "name": "FetchOpenIssues",
+    "params": [
+      {
+        "node": "Param",
+        "name": "repo",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "max_results",
+        "type_str": "Int",
+        "default": "25"
+      }
+    ],
+    "return_type": "Result<List<Issue>, ToolError>",
+    "docstrings": [
+      "Fetches open GitHub issues from a repository.",
+      "Use when triaging newly created or unassigned issues."
+    ],
+    "body": "github.list_issues(repo, state: \"open\", limit: max_results)",
+    "annotations": [],
+    "line": 29,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "AddIssueLabel",
+    "params": [
+      {
+        "node": "Param",
+        "name": "repo",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "issue_number",
+        "type_str": "Int",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "label",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Bool, ToolError>",
+    "docstrings": [
+      "Adds one label to a GitHub issue.",
+      "Use after a priority or category decision is made."
+    ],
+    "body": "github.add_label(repo, issue_number, label)",
+    "annotations": [],
+    "line": 35,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "AssignIssue",
+    "params": [
+      {
+        "node": "Param",
+        "name": "repo",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "issue_number",
+        "type_str": "Int",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "assignee",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Bool, ToolError>",
+    "docstrings": [
+      "Assigns a GitHub issue to a team member.",
+      "Use after selecting the best owner for the issue."
+    ],
+    "body": "github.assign_issue(repo, issue_number, assignee)",
+    "annotations": [],
+    "line": 41,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "GitHubTriageAgent",
+    "model": "@anthropic/claude-haiku",
+    "tools": [
+      "FetchOpenIssues",
+      "AddIssueLabel",
+      "AssignIssue"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "ShortTerm",
+      "options": {
+        "capacity": "1000"
+      }
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "triage",
+        "params": [
+          {
+            "node": "Param",
+            "name": "repo",
+            "type_str": "Str",
+            "default": null
+          },
+          {
+            "node": "Param",
+            "name": "team_context",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<(), AgentError>",
+        "annotations": [],
+        "body": "think \"Fetch untriaged issues and classify them\"\nlet issues = act FetchOpenIssues(repo: repo, max_results: 25)?\nstore memory.working[\"last_triage_run\"] = now().iso8601()\n\nfor issue in issues {\n    let decision = model.complete(ClassifyIssue(issue, team_context))\n    act AddIssueLabel(repo: repo, issue_number: issue.number, label: decision.priority)?\n    act AssignIssue(repo: repo, issue_number: issue.number, assignee: decision.assignee)?\n}\n\nOk(())",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 47
+  }
+]

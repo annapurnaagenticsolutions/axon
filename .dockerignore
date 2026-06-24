@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.pytest_cache
+.venv
+venv/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Docs (not needed at runtime)
+docs/
+*.md
+!README.md
+
+# Tests (not needed at runtime)
+tests/
+
+# Build artifacts
+dist/
+build/
+*.egg-info
+
+# Local data
+data/
+*.db
+*.sqlite3
+
+# CI/CD
+.github/
+.githooks/
+
+# Misc
+*.jpg
+*.svg
+*.html
+*.png

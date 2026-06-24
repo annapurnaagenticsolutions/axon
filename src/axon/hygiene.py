@@ -1,0 +1,381 @@
+"""Repository hygiene and ignore-rule auditing for AXON projects.
+
+The hygiene audit is intentionally deterministic and stdlib-only. It checks that
+local build outputs, generated servers, caches, traces, and secrets are ignored
+without accidentally ignoring source, docs, examples, CI config, or snapshots.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+import fnmatch
+import json
+
+
+@dataclass(frozen=True)
+class HygieneFinding:
+    """One repository-hygiene issue or warning."""
+
+    severity: str
+    code: str
+    message: str
+    path: str | None = None
+    detail: str | None = None
+
+    def to_dict(self) -> dict[str, str | None]:
+        return {
+            "severity": self.severity,
+            "code": self.code,
+            "message": self.message,
+            "path": self.path,
+            "detail": self.detail,
+        }
+
+    def format(self) -> str:
+        location = f" [{self.path}]" if self.path else ""
+        detail = f" ({self.detail})" if self.detail else ""
+        return f"{self.severity}: {self.code}{location}: {self.message}{detail}"
+
+
+@dataclass(frozen=True)
+class HygieneReport:
+    """Result of auditing repository ignore rules and hygiene."""
+
+    project_path: Path
+    gitignore_path: Path
+    required_patterns: list[str]
+    protected_patterns: list[str]
+    present_patterns: list[str]
+    findings: list[HygieneFinding] = field(default_factory=list)
+    scanned_paths: list[str] = field(default_factory=list)
+
+    @property
+    def error_count(self) -> int:
+        return sum(1 for finding in self.findings if finding.severity == "error")
+
+    @property
+    def warning_count(self) -> int:
+        return sum(1 for finding in self.findings if finding.severity == "warning")
+
+    @property
+    def passed(self) -> bool:
+        return self.error_count == 0
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "passed": self.passed,
+            "project_path": str(self.project_path),
+            "gitignore_path": str(self.gitignore_path),
+            "error_count": self.error_count,
+            "warning_count": self.warning_count,
+            "required_patterns": self.required_patterns,
+            "protected_patterns": self.protected_patterns,
+            "present_patterns": self.present_patterns,
+            "scanned_paths": self.scanned_paths,
+            "findings": [finding.to_dict() for finding in self.findings],
+        }
+
+
+REQUIRED_GITIGNORE_PATTERNS: tuple[str, ...] = (
+    "__pycache__/",
+    "*.py[cod]",
+    ".pytest_cache/",
+    ".mypy_cache/",
+    ".ruff_cache/",
+    ".coverage",
+    "htmlcov/",
+    "build/",
+    "dist/",
+    "*.egg-info/",
+    ".venv/",
+    "venv/",
+    "env/",
+    "*_server.py",
+    "traces/*.jsonl",
+    "traces/**/*.jsonl",
+    ".axon/cache/",
+    ".axon/tmp/",
+    ".env",
+    ".env.*",
+    "!.env.example",
+    "*.pem",
+    "*.key",
+    ".DS_Store",
+    "Thumbs.db",
+)
+
+PROTECTED_PATTERNS: tuple[str, ...] = (
+    "src/",
+    "src/**",
+    "tests/",
+    "tests/**",
+    "examples/",
+    "examples/**",
+    "docs/",
+    "docs/**",
+    "tests/snapshots/",
+    "tests/snapshots/**",
+    "tests/golden_errors/",
+    "tests/golden_errors/**",
+    ".github/",
+    ".github/**",
+    ".githooks/",
+    ".githooks/**",
+    "README.md",
+    "CHANGELOG.md",
+    "pyproject.toml",
+    "axon.toml",
+)
+
+SENSITIVE_FILE_GLOBS: tuple[str, ...] = (
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+)
+
+GENERATED_FILE_GLOBS: tuple[str, ...] = (
+    "*_server.py",
+    "traces/*.jsonl",
+    "traces/**/*.jsonl",
+    ".axon/cache/**",
+    ".axon/tmp/**",
+)
+
+CACHE_DIR_NAMES: tuple[str, ...] = (
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+)
+
+DEFAULT_GITIGNORE = """# Python caches and bytecode
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# AXON generated outputs
+*_server.py
+traces/*.jsonl
+traces/**/*.jsonl
+.axon/cache/
+.axon/tmp/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+"""
+
+
+def audit_hygiene(project_path: str | Path = ".") -> HygieneReport:
+    """Audit repository hygiene and `.gitignore` rules for an AXON project."""
+    root = Path(project_path).expanduser().resolve()
+    gitignore = root / ".gitignore"
+    findings: list[HygieneFinding] = []
+    present_patterns: list[str] = []
+
+    if not root.exists():
+        findings.append(
+            HygieneFinding(
+                "error",
+                "project-path-missing",
+                "project path does not exist",
+                str(root),
+            )
+        )
+    elif not root.is_dir():
+        findings.append(
+            HygieneFinding(
+                "error",
+                "project-path-not-directory",
+                "project path is not a directory",
+                str(root),
+            )
+        )
+
+    if gitignore.exists() and gitignore.is_file():
+        present_patterns = read_gitignore_patterns(gitignore)
+    else:
+        findings.append(
+            HygieneFinding(
+                "error",
+                "missing-gitignore",
+                "project should include a .gitignore file",
+                ".gitignore",
+            )
+        )
+
+    present_set = set(present_patterns)
+    for pattern in REQUIRED_GITIGNORE_PATTERNS:
+        if pattern not in present_set:
+            findings.append(
+                HygieneFinding(
+                    "error",
+                    "missing-ignore-pattern",
+                    "required ignore pattern is missing",
+                    ".gitignore",
+                    pattern,
+                )
+            )
+
+    for protected in PROTECTED_PATTERNS:
+        if _protected_pattern_is_ignored(protected, present_patterns):
+            findings.append(
+                HygieneFinding(
+                    "error",
+                    "protected-path-ignored",
+                    "source, documentation, examples, CI, or snapshot paths must not be ignored",
+                    ".gitignore",
+                    protected,
+                )
+            )
+
+    scanned_paths: list[str] = []
+    if root.exists() and root.is_dir():
+        scanned_paths = _walk_project_paths(root)
+        for rel in scanned_paths:
+            rel_path = rel.replace("\\", "/")
+            name = Path(rel_path).name
+            if _matches_any(rel_path, SENSITIVE_FILE_GLOBS) and rel_path != ".env.example":
+                findings.append(
+                    HygieneFinding(
+                        "error",
+                        "local-secret-present",
+                        "local secret-looking file is present in the project tree",
+                        rel_path,
+                    )
+                )
+            elif _matches_any(rel_path, GENERATED_FILE_GLOBS):
+                findings.append(
+                    HygieneFinding(
+                        "warning",
+                        "generated-output-present",
+                        "generated output appears in the project tree; ensure it is not committed",
+                        rel_path,
+                    )
+                )
+            elif name in CACHE_DIR_NAMES:
+                findings.append(
+                    HygieneFinding(
+                        "warning",
+                        "cache-directory-present",
+                        "cache directory appears in the project tree; it should remain ignored",
+                        rel_path,
+                    )
+                )
+
+    return HygieneReport(
+        project_path=root,
+        gitignore_path=gitignore,
+        required_patterns=list(REQUIRED_GITIGNORE_PATTERNS),
+        protected_patterns=list(PROTECTED_PATTERNS),
+        present_patterns=present_patterns,
+        findings=findings,
+        scanned_paths=scanned_paths,
+    )
+
+
+def read_gitignore_patterns(path: str | Path) -> list[str]:
+    """Return meaningful patterns from a `.gitignore`, excluding blanks/comments."""
+    result: list[str] = []
+    for raw_line in Path(path).read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        result.append(line)
+    return result
+
+
+def write_default_gitignore(path: str | Path = ".gitignore", *, force: bool = False) -> Path:
+    """Write the conservative AXON default `.gitignore` template."""
+    target = Path(path).expanduser().resolve()
+    if target.exists() and not force:
+        raise FileExistsError(f"refusing to overwrite existing .gitignore: {target}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(DEFAULT_GITIGNORE.rstrip() + "\n", encoding="utf-8")
+    return target
+
+
+def hygiene_report_to_json(report: HygieneReport) -> str:
+    """Serialize a hygiene report as stable JSON."""
+    return json.dumps(report.to_dict(), indent=2, sort_keys=True)
+
+
+def format_hygiene_report(report: HygieneReport) -> str:
+    """Return a human-readable hygiene report."""
+    status = "PASS" if report.passed else "FAIL"
+    lines = [f"AXON repository hygiene: {status}", f"Project: {report.project_path}", f"Gitignore: {report.gitignore_path}"]
+    lines.append(f"Patterns present: {len(report.present_patterns)}")
+    lines.append(f"Required patterns: {len(report.required_patterns)}")
+    lines.append(f"Errors: {report.error_count}")
+    lines.append(f"Warnings: {report.warning_count}")
+    if report.findings:
+        lines.append("Findings:")
+        lines.extend(f"  {finding.format()}" for finding in report.findings)
+    else:
+        lines.append("No hygiene findings.")
+    return "\n".join(lines)
+
+
+def _walk_project_paths(root: Path) -> list[str]:
+    ignored_dirs = {".git", ".hg", ".svn", ".venv", "venv", "__pycache__", ".pytest_cache", "node_modules"}
+    result: list[str] = []
+    for path in root.rglob("*"):
+        try:
+            rel = path.relative_to(root).as_posix()
+        except ValueError:
+            continue
+        # Only skip hidden/excluded directories, not files
+        parent_parts = path.relative_to(root).parts[:-1]
+        if any(part in ignored_dirs or (part.startswith(".") and part not in {""}) for part in parent_parts):
+            continue
+        result.append(rel + ("/" if path.is_dir() else ""))
+    return sorted(result)
+
+
+def _matches_any(path: str, patterns: tuple[str, ...]) -> bool:
+    normalized = path.rstrip("/")
+    for pattern in patterns:
+        p = pattern.rstrip("/")
+        if fnmatch.fnmatch(normalized, p) or fnmatch.fnmatch(path, pattern):
+            return True
+    return False
+
+
+def _protected_pattern_is_ignored(protected: str, present_patterns: list[str]) -> bool:
+    normalized_protected = protected.strip().rstrip("/")
+    if not normalized_protected:
+        return False
+    for pattern in present_patterns:
+        if pattern.startswith("!"):
+            continue
+        normalized_pattern = pattern.strip().rstrip("/")
+        if normalized_pattern == normalized_protected:
+            return True
+        if normalized_pattern == normalized_protected + "/**":
+            return True
+        if normalized_protected.endswith("/**") and normalized_pattern == normalized_protected[:-3].rstrip("/"):
+            return True
+    return False

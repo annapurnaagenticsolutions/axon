@@ -1,0 +1,82 @@
+[
+  {
+    "node": "PromptDecl",
+    "name": "DraftGreeting",
+    "params": [
+      {
+        "node": "Param",
+        "name": "name",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "tone",
+        "type_str": "\"friendly\" | \"formal\"",
+        "default": "\"friendly\""
+      }
+    ],
+    "return_type": "Str",
+    "template": "Write a {tone} greeting for {name}.\nKeep it short.",
+    "annotations": [
+      {
+        "node": "Annotation",
+        "name": "budget",
+        "args": {
+          "tokens": "120"
+        }
+      }
+    ],
+    "line": 1
+  },
+  {
+    "node": "ToolDecl",
+    "name": "Echo",
+    "params": [
+      {
+        "node": "Param",
+        "name": "text",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Str",
+    "docstrings": [
+      "Echoes text back unchanged."
+    ],
+    "body": "text",
+    "annotations": [],
+    "line": 8,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "PromptDemo",
+    "model": "@anthropic/claude-4",
+    "tools": [
+      "Echo"
+    ],
+    "memory": null,
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "run",
+        "params": [
+          {
+            "node": "Param",
+            "name": "name",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Str",
+        "annotations": [],
+        "body": "name",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "line": 13
+  }
+]

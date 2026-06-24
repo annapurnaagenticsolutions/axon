@@ -1,0 +1,105 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "kind": "agent",
+      "memory": null,
+      "methods": [
+        {
+          "annotations": [],
+          "body": "title",
+          "name": "run",
+          "params": [
+            {
+              "default": null,
+              "name": "title",
+              "type_str": "Str"
+            }
+          ],
+          "return_type": "Str"
+        }
+      ],
+      "model": "anthropic/claude-4",
+      "name": "TypeAliasDemo",
+      "tools": [
+        "EchoIssueTitle"
+      ],
+      "workers": null
+    }
+  ],
+  "flows": [],
+  "global_security": {
+    "approval_gates": [],
+    "capabilities": [],
+    "max_cost_budget_usd": null,
+    "max_token_budget": null
+  },
+  "imports": [],
+  "metadata": {},
+  "prompts": [],
+  "rags": [],
+  "tools": [
+    {
+      "annotations": [],
+      "body": "title",
+      "docstrings": [
+        "Echoes an issue title."
+      ],
+      "kind": "tool",
+      "name": "EchoIssueTitle",
+      "params": [
+        {
+          "default": null,
+          "name": "title",
+          "type_str": "Str"
+        }
+      ],
+      "return_type": "Str"
+    }
+  ],
+  "type_aliases": [
+    {
+      "fields": [],
+      "kind": "type_alias",
+      "name": "UserName",
+      "type_params": [],
+      "value": "Str"
+    },
+    {
+      "fields": [],
+      "kind": "type_alias",
+      "name": "Priority",
+      "type_params": [],
+      "value": "\"low\" | \"medium\" | \"high\""
+    },
+    {
+      "fields": [
+        {
+          "default": null,
+          "name": "id",
+          "type_str": "Int"
+        },
+        {
+          "default": null,
+          "name": "title",
+          "type_str": "Str"
+        },
+        {
+          "default": null,
+          "name": "priority",
+          "type_str": "Priority"
+        },
+        {
+          "default": null,
+          "name": "labels",
+          "type_str": "List<Str>"
+        }
+      ],
+      "kind": "type_alias",
+      "name": "Issue",
+      "type_params": [],
+      "value": "{\n    id: Int,\n    title: Str,\n    priority: Priority,\n    labels: List<Str>\n}"
+    }
+  ],
+  "version": "0.2.0"
+}

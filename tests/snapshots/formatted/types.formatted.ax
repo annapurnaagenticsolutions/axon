@@ -1,0 +1,25 @@
+type UserName = Str
+
+type Priority = "low" | "medium" | "high"
+
+type Issue = {
+    id: Int,
+    title: Str,
+    priority: Priority,
+    labels: List<Str>,
+}
+
+tool EchoIssueTitle(title: Str) -> Str {
+    /// Echoes an issue title.
+
+    title
+}
+
+agent TypeAliasDemo {
+    model: @anthropic/claude-4
+    tools: [EchoIssueTitle]
+
+    fn run(title: Str) -> Str {
+        title
+    }
+}
