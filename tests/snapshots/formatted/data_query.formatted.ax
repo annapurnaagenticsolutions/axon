@@ -1,0 +1,91 @@
+tool InitDB(db_path: Str) -> Result<Str, ToolError> {
+    /// Initializes a SQLite database with a records table and seed data.
+
+    db.execute(db_path, "CREATE TABLE IF NOT EXISTS records (id INTEGER PRIMARY KEY, name TEXT, value REAL)")
+    db.execute(db_path, "INSERT OR IGNORE INTO records (id, name, value) VALUES (1, 'alpha', 10.5)")
+    db.execute(db_path, "INSERT OR IGNORE INTO records (id, name, value) VALUES (2, 'beta', 20.0)")
+    db.execute(db_path, "INSERT OR IGNORE INTO records (id, name, value) VALUES (3, 'gamma', 30.75)")
+    "initialized"
+}
+
+tool QueryAll(db_path: Str) -> Result<List[Map[Str, Any]], ToolError> {
+    /// Queries all records from the database, ordered by id.
+
+    db.query(db_path, "SELECT * FROM records ORDER BY id")
+}
+
+tool QueryByName(db_path: Str, name: Str) -> Result<List[Map[Str, Any]], ToolError> {
+    /// Queries records matching a specific name.
+
+    db.query(db_path, "SELECT * FROM records WHERE name = ?", [name])
+}
+
+tool InsertRecord(db_path: Str, name: Str, value: Float) -> Result<Int, ToolError> {
+    /// Inserts a new record and returns rows affected.
+
+    db.execute(db_path, "INSERT INTO records (name, value) VALUES (?, ?)", [name, value])
+}
+
+tool BatchInsert(db_path: Str, records: List[Map[Str, Any]]) -> Result<Int, ToolError> {
+    /// Inserts multiple records in a single transaction.
+
+    let stmts = []
+    for r in records {
+        let stmt = {
+            "sql": "INSERT INTO records (name, value) VALUES (?, ?)",
+            "params": [r.name, r.value]
+        }
+        stmts = stmts + [stmt]
+    }
+    db.transaction(db_path, stmts)
+}
+
+tool GetTables(db_path: Str) -> Result<List[Str], ToolError> {
+    /// Returns a list of table names in the database.
+
+    db.tables(db_path)
+}
+
+tool GetSchema(db_path: Str, table: Str) -> Result<List[Map[Str, Any]], ToolError> {
+    /// Returns column information for a table.
+
+    db.schema(db_path, table)
+}
+
+agent DataQueryBot {
+    model: @mock/test
+    tools: [InitDB, QueryAll, QueryByName, InsertRecord, BatchInsert, GetTables, GetSchema]
+    memory: Memory<ShortTerm>(capacity: 100)
+
+    fn run(db_path: Str) -> Result<List[Map[Str, Any]], AgentError> {
+        think f"Initializing database at {db_path}"
+        let status = act InitDB(db_path: db_path)?
+        think f"Database status: {status}"
+
+        let tables = act GetTables(db_path: db_path)?
+        think f"Tables: {tables}"
+
+        let schema = act GetSchema(db_path: db_path, table: "records")?
+        think f"Schema has {len(schema)} columns"
+
+        let rows = act QueryAll(db_path: db_path)?
+        think f"Found {len(rows)} records"
+
+        let n = act InsertRecord(db_path: db_path, name: "delta", value: 40.25)?
+        think f"Inserted {n} row(s)"
+
+        let batch = act BatchInsert(db_path: db_path, records: [
+            {name: "epsilon", value: 50.0},
+            {name: "zeta", value: 60.5}
+        ])?
+        think f"Batch inserted {batch} row(s)"
+
+        let all = act QueryAll(db_path: db_path)?
+        think f"Total records now: {len(all)}"
+
+        store memory.working["last_db"] = db_path
+        store memory.working["record_count"] = len(all)
+
+        Ok(all)
+    }
+}

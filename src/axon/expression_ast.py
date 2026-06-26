@@ -344,3 +344,26 @@ class TerminateExpr(Expr):
     line: int
     agent_name: Expr
     reason: Expr | None = None
+
+
+@dataclass(frozen=True)
+class ParExpr(Expr):
+    """Parallel dispatch: par { expr1, expr2, ... }.
+
+    All expressions are evaluated concurrently via threads.
+    Returns a list of results in the same order as the expressions.
+    """
+    line: int
+    expressions: list[Expr] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class StructuredOutputExpr(Expr):
+    """Structured output: think_as(Type, prompt_expr).
+
+    Calls the model with JSON mode and validates the response against the AXON type.
+    Returns a parsed Python object (dict, list, etc.) instead of a raw string.
+    """
+    line: int
+    type_str: str
+    prompt: Expr

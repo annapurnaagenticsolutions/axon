@@ -1,0 +1,215 @@
+[
+  {
+    "node": "ToolDecl",
+    "name": "InitDB",
+    "params": [
+      {
+        "node": "Param",
+        "name": "db_path",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Str, ToolError>",
+    "docstrings": [
+      "Initializes a SQLite database with a records table and seed data."
+    ],
+    "body": "db.execute(db_path, \"CREATE TABLE IF NOT EXISTS records (id INTEGER PRIMARY KEY, name TEXT, value REAL)\")\ndb.execute(db_path, \"INSERT OR IGNORE INTO records (id, name, value) VALUES (1, 'alpha', 10.5)\")\ndb.execute(db_path, \"INSERT OR IGNORE INTO records (id, name, value) VALUES (2, 'beta', 20.0)\")\ndb.execute(db_path, \"INSERT OR IGNORE INTO records (id, name, value) VALUES (3, 'gamma', 30.75)\")\n\"initialized\"",
+    "annotations": [],
+    "line": 9,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "QueryAll",
+    "params": [
+      {
+        "node": "Param",
+        "name": "db_path",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<List[Map[Str, Any]], ToolError>",
+    "docstrings": [
+      "Queries all records from the database, ordered by id."
+    ],
+    "body": "db.query(db_path, \"SELECT * FROM records ORDER BY id\")",
+    "annotations": [],
+    "line": 18,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "QueryByName",
+    "params": [
+      {
+        "node": "Param",
+        "name": "db_path",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "name",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<List[Map[Str, Any]], ToolError>",
+    "docstrings": [
+      "Queries records matching a specific name."
+    ],
+    "body": "db.query(db_path, \"SELECT * FROM records WHERE name = ?\", [name])",
+    "annotations": [],
+    "line": 23,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "InsertRecord",
+    "params": [
+      {
+        "node": "Param",
+        "name": "db_path",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "name",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "value",
+        "type_str": "Float",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Int, ToolError>",
+    "docstrings": [
+      "Inserts a new record and returns rows affected."
+    ],
+    "body": "db.execute(db_path, \"INSERT INTO records (name, value) VALUES (?, ?)\", [name, value])",
+    "annotations": [],
+    "line": 28,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "BatchInsert",
+    "params": [
+      {
+        "node": "Param",
+        "name": "db_path",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "records",
+        "type_str": "List[Map[Str, Any]]",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Int, ToolError>",
+    "docstrings": [
+      "Inserts multiple records in a single transaction."
+    ],
+    "body": "let stmts = []\nfor r in records {\n    let stmt = {\n        \"sql\": \"INSERT INTO records (name, value) VALUES (?, ?)\",\n        \"params\": [r.name, r.value]\n    }\n    stmts = stmts + [stmt]\n}\ndb.transaction(db_path, stmts)",
+    "annotations": [],
+    "line": 33,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "GetTables",
+    "params": [
+      {
+        "node": "Param",
+        "name": "db_path",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<List[Str], ToolError>",
+    "docstrings": [
+      "Returns a list of table names in the database."
+    ],
+    "body": "db.tables(db_path)",
+    "annotations": [],
+    "line": 46,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "GetSchema",
+    "params": [
+      {
+        "node": "Param",
+        "name": "db_path",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "table",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<List[Map[Str, Any]], ToolError>",
+    "docstrings": [
+      "Returns column information for a table."
+    ],
+    "body": "db.schema(db_path, table)",
+    "annotations": [],
+    "line": 51,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "DataQueryBot",
+    "model": "@mock/test",
+    "tools": [
+      "InitDB",
+      "QueryAll",
+      "QueryByName",
+      "InsertRecord",
+      "BatchInsert",
+      "GetTables",
+      "GetSchema"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "ShortTerm",
+      "options": {
+        "capacity": "100"
+      }
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "run",
+        "params": [
+          {
+            "node": "Param",
+            "name": "db_path",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<List[Map[Str, Any]], AgentError>",
+        "annotations": [],
+        "body": "think f\"Initializing database at {db_path}\"\nlet status = act InitDB(db_path: db_path)?\nthink f\"Database status: {status}\"\n\nlet tables = act GetTables(db_path: db_path)?\nthink f\"Tables: {tables}\"\n\nlet schema = act GetSchema(db_path: db_path, table: \"records\")?\nthink f\"Schema has {len(schema)} columns\"\n\nlet rows = act QueryAll(db_path: db_path)?\nthink f\"Found {len(rows)} records\"\n\nlet n = act InsertRecord(db_path: db_path, name: \"delta\", value: 40.25)?\nthink f\"Inserted {n} row(s)\"\n\nlet batch = act BatchInsert(db_path: db_path, records: [\n    {name: \"epsilon\", value: 50.0},\n    {name: \"zeta\", value: 60.5}\n])?\nthink f\"Batch inserted {batch} row(s)\"\n\nlet all = act QueryAll(db_path: db_path)?\nthink f\"Total records now: {len(all)}\"\n\nstore memory.working[\"last_db\"] = db_path\nstore memory.working[\"record_count\"] = len(all)\n\nOk(all)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "version": "0.1.0",
+    "line": 56
+  }
+]

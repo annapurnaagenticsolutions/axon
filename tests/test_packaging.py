@@ -24,7 +24,7 @@ def _subprocess_env() -> dict[str, str]:
 def test_pyproject_declares_console_script():
     data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
-    assert data["project"]["name"] == "axon-lang"
+    assert data["project"]["name"] == "axon-dsl"
     assert data["project"]["requires-python"] == ">=3.11"
     assert data["project"]["scripts"]["axon"] == "axon.cli:main"
 

@@ -57,6 +57,7 @@ class MockProviderPlugin(ProviderPlugin):
         max_tokens: int,
         temperature: float = 0.7,
         stream: bool = False,
+        response_format: Optional[str] = None,
     ) -> Result[str, ProviderError]:
         """Invoke the mock provider with a prompt."""
         # Generate a key for response lookup
@@ -65,7 +66,11 @@ class MockProviderPlugin(ProviderPlugin):
         if key in self._responses:
             response = self._responses[key]
             return Ok(response.text)
-        
+
+        # If response_format is set, return a JSON-structured mock response
+        if response_format:
+            return Ok(self._generate_structured_mock(response_format))
+
         return Ok(self._default_response)
     
     def call_stream(
@@ -98,3 +103,50 @@ class MockProviderPlugin(ProviderPlugin):
     def clear_responses(self) -> None:
         """Clear all configured responses."""
         self._responses.clear()
+
+    def _generate_structured_mock(self, type_str: str) -> str:
+        """Generate a JSON mock response based on an AXON type string."""
+        import json
+        import re
+
+        # Parse the type string to generate appropriate mock JSON
+        type_str = type_str.strip()
+
+        # Primitive types
+        if type_str == "Str":
+            return json.dumps("mock string")
+        if type_str == "Int":
+            return json.dumps(42)
+        if type_str == "Float":
+            return json.dumps(3.14)
+        if type_str == "Bool":
+            return json.dumps(True)
+        if type_str in ("None", "Null"):
+            return json.dumps(None)
+
+        # Option<T> — return Some(T)
+        opt_match = re.match(r"Option<(.+)>", type_str)
+        if opt_match:
+            return self._generate_structured_mock(opt_match.group(1))
+
+        # List<T> — return [T]
+        list_match = re.match(r"List<(.+)>", type_str)
+        if list_match:
+            inner = self._generate_structured_mock(list_match.group(1))
+            return f"[{inner}]"
+
+        # Record types: { field1: Type1, field2: Type2 }
+        if type_str.startswith("{") and type_str.endswith("}"):
+            fields = {}
+            inner = type_str[1:-1]
+            for field_def in inner.split(","):
+                field_def = field_def.strip()
+                if ":" in field_def:
+                    name, ftype = field_def.split(":", 1)
+                    name = name.strip()
+                    ftype = ftype.strip()
+                    fields[name] = json.loads(self._generate_structured_mock(ftype))
+            return json.dumps(fields)
+
+        # Named type alias — return a dict with a "name" field
+        return json.dumps({"name": type_str.lower(), "type": type_str})

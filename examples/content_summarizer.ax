@@ -1,0 +1,79 @@
+/// AXON Content Summarizer Agent — Real-World Demo
+///
+/// Fetches content from a URL, summarizes it with an LLM, extracts
+/// key points, and saves the summary to disk. Designed to run with --live:
+///
+///   axon run examples/content_summarizer.ax --arg url=https://httpbin.org/json --live --provider groq
+///   axon run examples/content_summarizer.ax --arg url=https://httpbin.org/json --live --provider openai
+///
+/// In mock mode (default), the agent still executes end-to-end:
+///
+///   axon run examples/content_summarizer.ax --arg url=https://httpbin.org/json
+
+type Summary = {
+    url: Str,
+    title: Str,
+    key_points: List<Str>,
+    summary: Str,
+    word_count: Int
+}
+
+prompt SummarizePrompt(content: Str, url: Str, @budget(tokens: 1500)) -> Summary {
+    """
+    Summarize the following content from {url}.
+
+    Content:
+    {content}
+
+    Provide:
+    - title: a concise title for the content
+    - key_points: 3-5 bullet points capturing the most important information
+    - summary: a 2-3 paragraph summary
+
+    Return as: title | key_points | summary
+    """
+}
+
+tool FetchURL(url: Str) -> Result<Str, ToolError> {
+    /// Fetches content from a URL via HTTP GET.
+    /// Returns the raw response body as a string.
+    http.get(url)
+}
+
+tool SaveSummary(output_path: Str, content: Str) -> Result<Bool, ToolError> {
+    /// Saves summary content to a file on disk.
+    fs.write(output_path, content)
+}
+
+tool WordCount(text: Str) -> Result<Int, ToolError> {
+    /// Counts the number of words in a text string.
+    len(text)
+}
+
+agent ContentSummarizer {
+    model: @groq/llama-3.3-70b-versatile
+    tools: [FetchURL, SaveSummary, WordCount]
+    memory: Memory<ShortTerm>(capacity: 200)
+
+    fn run(url: Str) -> Result<Str, AgentError> {
+        think f"Fetching content from: {url}"
+
+        let content = act FetchURL(url: url)?
+        store memory.working["last_url"] = url
+        store memory.working["content_length"] = len(content)
+
+        think f"Fetched {len(content)} characters. Generating summary..."
+
+        let summary_text = model.complete(SummarizePrompt(content, url))
+
+        let words = act WordCount(text: summary_text)?
+        think f"Summary generated: {words} words"
+
+        let output_file = "summary_output.md"
+        act SaveSummary(output_path: output_file, content: summary_text)?
+
+        think f"Summary saved to {output_file}"
+
+        Ok(summary_text)
+    }
+}

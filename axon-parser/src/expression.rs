@@ -49,6 +49,7 @@ pub enum Expr {
     Pause { agent_name: Box<Expr> },
     Resume { agent_name: Box<Expr> },
     Terminate { agent_name: Box<Expr>, reason: Option<Box<Expr>> },
+    Par { expressions: Vec<Expr> },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -288,6 +289,7 @@ impl<'a> ExprParser<'a> {
         if self.starts_with_kw("chan") { self.advance_by(4); self.skip_ws(); self.expect('(')?; self.skip_ws(); let capacity = if self.peek() == Some(')') { None } else { let cap = self.parse_expr()?; self.skip_ws(); Some(Box::new(cap)) }; self.expect(')')?; return Ok(Expr::Chan { capacity }); }
         if self.starts_with_kw("select") { self.advance_by(6); self.skip_ws(); let arms = self.parse_select_arms()?; return Ok(Expr::Select { arms }); }
         if self.starts_with_kw("pool") { self.advance_by(4); self.skip_ws(); self.expect('(')?; self.skip_ws(); let size = Box::new(self.parse_expr()?); self.skip_ws(); self.expect(',')?; self.skip_ws(); let target = Box::new(self.parse_expr()?); self.skip_ws(); self.expect(')')?; return Ok(Expr::Pool { size, target }); }
+        if self.starts_with_kw("par") { self.advance_by(3); self.skip_ws(); self.expect('{')?; let mut exprs = Vec::new(); self.skip_ws(); while self.peek() != Some('}') && self.pos < self.source.len() { if self.peek() == Some(',') { self.advance(); self.skip_ws(); continue; } exprs.push(self.parse_expr()?); self.skip_ws(); } self.expect('}')?; return Ok(Expr::Par { expressions: exprs }); }
         if self.starts_with_kw("send") { self.advance_by(4); self.skip_ws(); let recipient = Box::new(self.parse_expr()?); self.skip_ws(); self.expect(',')?; self.skip_ws(); let message = Box::new(self.parse_expr()?); return Ok(Expr::Send { recipient, message }); }
         if self.starts_with_kw("receive") { self.advance_by(7); self.skip_ws(); let timeout_ms = if self.peek() == Some('(') { self.advance(); self.skip_ws(); let t = if self.peek() == Some(')') { None } else { let t = self.parse_expr()?; self.skip_ws(); Some(Box::new(t)) }; self.expect(')')?; t } else { None }; return Ok(Expr::Receive { timeout_ms }); }
         if self.starts_with_kw("broadcast") { self.advance_by(9); self.skip_ws(); let channel = Box::new(self.parse_expr()?); self.skip_ws(); self.expect(',')?; self.skip_ws(); let message = Box::new(self.parse_expr()?); return Ok(Expr::Broadcast { channel, message }); }
@@ -716,6 +718,12 @@ mod tests {
     }
 
     #[test]
+    fn test_while_with_binary_condition() {
+        let e = parse_expression("while x > 0 { x - 1 }").unwrap();
+        assert!(matches!(e, Expr::While { .. }));
+    }
+
+    #[test]
     fn test_break() {
         let e = parse_expression("break").unwrap();
         assert!(matches!(e, Expr::Break));
@@ -830,5 +838,35 @@ mod tests {
     fn test_terminate() {
         let e = parse_expression("terminate(\"my_agent\")").unwrap();
         assert!(matches!(e, Expr::Terminate { .. }));
+    }
+
+    #[test]
+    fn test_par() {
+        let e = parse_expression("par { 1 + 2, 3 + 4, 5 + 6 }").unwrap();
+        if let Expr::Par { expressions } = e {
+            assert_eq!(expressions.len(), 3);
+        } else {
+            panic!("Expected Par expression");
+        }
+    }
+
+    #[test]
+    fn test_par_empty() {
+        let e = parse_expression("par { }").unwrap();
+        if let Expr::Par { expressions } = e {
+            assert_eq!(expressions.len(), 0);
+        } else {
+            panic!("Expected Par expression");
+        }
+    }
+
+    #[test]
+    fn test_par_single() {
+        let e = parse_expression("par { 42 }").unwrap();
+        if let Expr::Par { expressions } = e {
+            assert_eq!(expressions.len(), 1);
+        } else {
+            panic!("Expected Par expression");
+        }
     }
 }

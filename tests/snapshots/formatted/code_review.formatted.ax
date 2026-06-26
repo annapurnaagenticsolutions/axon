@@ -1,0 +1,80 @@
+type ReviewFinding = {
+    severity: "info" | "warning" | "error",
+    line_number: Int,
+    message: Str,
+}
+
+type CodeReview = {
+    file: Str,
+    summary: Str,
+    findings: List<ReviewFinding>,
+    approved: Bool,
+}
+
+prompt ReviewPrompt(code: Str, file_path: Str, @budget(tokens: 2000)) -> CodeReview {
+    """
+    You are a senior code reviewer. Review the following code file.
+
+    File: {file_path}
+
+    Code:
+    ```
+    {code}
+    ```
+
+    Provide a structured review with:
+    - summary: overall assessment (1-2 sentences)
+    - findings: list of issues with severity, line number, and message
+    - approved: true if no blocking issues, false otherwise
+
+    Return as: summary | findings | approved
+    """
+}
+
+tool ReadFile(file_path: Str) -> Result<Str, ToolError> {
+    /// Reads a source file from the local filesystem.
+    /// The path is resolved relative to the AXON source file's directory.
+
+    fs.read(file_path)
+}
+
+tool WriteReview(output_path: Str, review: Str) -> Result<Bool, ToolError> {
+    /// Writes the review output to a file.
+    /// Creates parent directories if needed.
+
+    fs.write(output_path, review)
+}
+
+tool ParseReview(raw_response: Str) -> Result<CodeReview, ToolError> {
+    /// Extracts the review from the LLM response text.
+    /// Falls back to a simple summary if structured parsing fails.
+
+    raw_response
+}
+
+agent CodeReviewer {
+    model: @groq/llama-3.3-70b-versatile
+    tools: [ReadFile, WriteReview, ParseReview]
+    memory: Memory<ShortTerm>(capacity: 100)
+
+    fn run(file_path: Str) -> Result<Str, AgentError> {
+        think f"Starting code review for: {file_path}"
+
+        let code = act ReadFile(file_path: file_path)?
+        store memory.working["last_file"] = file_path
+        store memory.working["code_length"] = len(code)
+
+        think f"Read {len(code)} characters. Sending to LLM for review..."
+
+        let review_text = model.complete(ReviewPrompt(code, file_path))
+
+        think "Review received. Saving to disk..."
+
+        let output_file = "review_output.md"
+        act WriteReview(output_path: output_file, review: review_text)?
+
+        think f"Review saved to {output_file}"
+
+        Ok(review_text)
+    }
+}

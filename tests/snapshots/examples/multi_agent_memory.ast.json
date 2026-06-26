@@ -119,6 +119,7 @@
       }
     ],
     "workers": null,
+    "version": "0.1.0",
     "line": 28
   },
   {
@@ -156,6 +157,7 @@
       }
     ],
     "workers": null,
+    "version": "0.1.0",
     "line": 43
   },
   {
@@ -193,6 +195,7 @@
       }
     ],
     "workers": null,
+    "version": "0.1.0",
     "line": 55
   },
   {

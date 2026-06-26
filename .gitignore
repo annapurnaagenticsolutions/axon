@@ -38,3 +38,7 @@ traces/**/*.jsonl
 # OS / editor noise
 .DS_Store
 Thumbs.db
+
+# WASM build artifacts (keep playground/pkg which is deployed)
+/pkg/
+/axon-parser/pkg/

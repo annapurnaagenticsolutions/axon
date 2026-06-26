@@ -1,0 +1,200 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": "ShortTerm",
+      "memory_options": {
+        "capacity": "100"
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 11,
+          "has_body": true,
+          "name": "run",
+          "params": [
+            {
+              "default": null,
+              "name": "file_path",
+              "type": "Str"
+            }
+          ],
+          "return_type": "Result<Str, AgentError>"
+        }
+      ],
+      "model": "@groq/llama-3.3-70b-versatile",
+      "name": "CodeReviewer",
+      "tools": [
+        "ReadFile",
+        "WriteReview",
+        "ParseReview"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "enabled": true,
+      "name": "declaration_inspection",
+      "reason": "safe parsed declaration summaries are allowed"
+    },
+    {
+      "enabled": false,
+      "name": "method_execution",
+      "reason": "AXON method bodies are not executed yet"
+    },
+    {
+      "enabled": false,
+      "name": "provider_calls",
+      "reason": "model/provider calls require a future provider runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "tool_dispatch",
+      "reason": "real tool dispatch requires a future tool runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "memory_mutation",
+      "reason": "memory writes are not applied by the current runtime plan"
+    },
+    {
+      "enabled": false,
+      "name": "rag_indexing",
+      "reason": "RAG indexing is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "rag_retrieval",
+      "reason": "RAG retrieval is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "flow_execution",
+      "reason": "flow orchestration is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "trace_replay",
+      "reason": "trace replay is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "secret_resolution",
+      "reason": "environment secrets are not resolved by runtime planning"
+    },
+    {
+      "enabled": false,
+      "name": "fastmcp_runtime_import",
+      "reason": "FastMCP is not imported by compiler/runtime planning core"
+    }
+  ],
+  "counts": {
+    "agents": 1,
+    "flows": 0,
+    "imports": 0,
+    "prompts": 1,
+    "rags": 0,
+    "tools": 3,
+    "type_aliases": 2
+  },
+  "flows": [],
+  "imports": [],
+  "notes": [
+    "runtime plan is inspection-only",
+    "all executable capabilities remain disabled by Runtime RFC #001"
+  ],
+  "prompts": [
+    {
+      "annotations": [
+        "budget"
+      ],
+      "name": "ReviewPrompt",
+      "params": [
+        {
+          "default": null,
+          "name": "code",
+          "type": "Str"
+        },
+        {
+          "default": null,
+          "name": "file_path",
+          "type": "Str"
+        }
+      ],
+      "return_type": "CodeReview",
+      "template_line_count": 11
+    }
+  ],
+  "rags": [],
+  "source_path": "examples/code_review.ax",
+  "tools": [
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "docstring_count": 2,
+      "executable": false,
+      "has_body": true,
+      "name": "ReadFile",
+      "params": [
+        {
+          "default": null,
+          "name": "file_path",
+          "type": "Str"
+        }
+      ],
+      "return_type": "Result<Str, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "docstring_count": 2,
+      "executable": false,
+      "has_body": true,
+      "name": "WriteReview",
+      "params": [
+        {
+          "default": null,
+          "name": "output_path",
+          "type": "Str"
+        },
+        {
+          "default": null,
+          "name": "review",
+          "type": "Str"
+        }
+      ],
+      "return_type": "Result<Bool, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "docstring_count": 2,
+      "executable": false,
+      "has_body": true,
+      "name": "ParseReview",
+      "params": [
+        {
+          "default": null,
+          "name": "raw_response",
+          "type": "Str"
+        }
+      ],
+      "return_type": "Result<CodeReview, ToolError>"
+    }
+  ],
+  "type_aliases": [
+    {
+      "field_count": 3,
+      "name": "ReviewFinding",
+      "type_params": [],
+      "value": "{ severity: \"info\" | \"warning\" | \"error\", line_number: Int, message: Str }"
+    },
+    {
+      "field_count": 4,
+      "name": "CodeReview",
+      "type_params": [],
+      "value": "{ file: Str, summary: Str, findings: List<ReviewFinding>, approved: Bool }"
+    }
+  ]
+}

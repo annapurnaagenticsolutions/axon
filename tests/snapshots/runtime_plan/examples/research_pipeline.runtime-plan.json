@@ -1,0 +1,409 @@
+{
+  "agents": [
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": null,
+      "memory_options": {},
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 4,
+          "has_body": true,
+          "name": "plan",
+          "params": [
+            {
+              "default": null,
+              "name": "query",
+              "type": "ResearchQuery"
+            }
+          ],
+          "return_type": "Result<List<Str>, AgentError>"
+        }
+      ],
+      "model": "@openai/gpt-4o-mini",
+      "name": "QueryPlanner",
+      "tools": [
+        "ResearchDocs.retrieve"
+      ]
+    },
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": "Episodic",
+      "memory_options": {
+        "max_events": "500"
+      },
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 6,
+          "has_body": true,
+          "name": "investigate",
+          "params": [
+            {
+              "default": null,
+              "name": "sub_query",
+              "type": "Str"
+            },
+            {
+              "default": null,
+              "name": "depth",
+              "type": "Str"
+            }
+          ],
+          "return_type": "Result<List<SearchResult>, AgentError>"
+        }
+      ],
+      "model": "@anthropic/claude-4",
+      "name": "ResearchAgent",
+      "tools": [
+        "WebSearch",
+        "ResearchDocs.retrieve"
+      ]
+    },
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": null,
+      "memory_options": {},
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 6,
+          "has_body": true,
+          "name": "summarize",
+          "params": [
+            {
+              "default": null,
+              "name": "results",
+              "type": "List<SearchResult>"
+            },
+            {
+              "default": null,
+              "name": "topic",
+              "type": "Str"
+            }
+          ],
+          "return_type": "Result<Str, AgentError>"
+        }
+      ],
+      "model": "@anthropic/claude-haiku",
+      "name": "SummarizerAgent",
+      "tools": []
+    },
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": null,
+      "memory_options": {},
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 5,
+          "has_body": true,
+          "name": "verify",
+          "params": [
+            {
+              "default": null,
+              "name": "claim",
+              "type": "Str"
+            }
+          ],
+          "return_type": "Result<FactCheckResult, AgentError>"
+        }
+      ],
+      "model": "@openai/gpt-4o-mini",
+      "name": "FactCheckerAgent",
+      "tools": [
+        "WebSearch"
+      ]
+    },
+    {
+      "annotations": [],
+      "executable": false,
+      "memory_kind": null,
+      "memory_options": {},
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 32,
+          "has_body": true,
+          "name": "run",
+          "params": [
+            {
+              "default": null,
+              "name": "query",
+              "type": "ResearchQuery"
+            }
+          ],
+          "return_type": "Result<ResearchReport, AgentError>"
+        }
+      ],
+      "model": "@anthropic/claude-4",
+      "name": "ResearchCoordinator",
+      "tools": []
+    }
+  ],
+  "capabilities": [
+    {
+      "enabled": true,
+      "name": "declaration_inspection",
+      "reason": "safe parsed declaration summaries are allowed"
+    },
+    {
+      "enabled": false,
+      "name": "method_execution",
+      "reason": "AXON method bodies are not executed yet"
+    },
+    {
+      "enabled": false,
+      "name": "provider_calls",
+      "reason": "model/provider calls require a future provider runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "tool_dispatch",
+      "reason": "real tool dispatch requires a future tool runtime RFC"
+    },
+    {
+      "enabled": false,
+      "name": "memory_mutation",
+      "reason": "memory writes are not applied by the current runtime plan"
+    },
+    {
+      "enabled": false,
+      "name": "rag_indexing",
+      "reason": "RAG indexing is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "rag_retrieval",
+      "reason": "RAG retrieval is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "flow_execution",
+      "reason": "flow orchestration is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "trace_replay",
+      "reason": "trace replay is outside Runtime RFC #001"
+    },
+    {
+      "enabled": false,
+      "name": "secret_resolution",
+      "reason": "environment secrets are not resolved by runtime planning"
+    },
+    {
+      "enabled": false,
+      "name": "fastmcp_runtime_import",
+      "reason": "FastMCP is not imported by compiler/runtime planning core"
+    }
+  ],
+  "counts": {
+    "agents": 5,
+    "flows": 1,
+    "imports": 1,
+    "prompts": 0,
+    "rags": 1,
+    "tools": 2,
+    "type_aliases": 4
+  },
+  "flows": [
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "executable": false,
+      "name": "ResearchPipeline",
+      "params": [
+        {
+          "default": null,
+          "name": "input",
+          "type": "ResearchQuery"
+        }
+      ],
+      "return_type": "ResearchReport",
+      "stages": [
+        {
+          "name": "Plan",
+          "params": [
+            {
+              "default": null,
+              "name": "q",
+              "type": "ResearchQuery"
+            }
+          ],
+          "return_type": "List<Str>"
+        },
+        {
+          "name": "Investigate",
+          "params": [
+            {
+              "default": null,
+              "name": "queries",
+              "type": "List<Str>"
+            }
+          ],
+          "return_type": "List<SearchResult>"
+        },
+        {
+          "name": "Summarize",
+          "params": [
+            {
+              "default": null,
+              "name": "results",
+              "type": "List<SearchResult>"
+            }
+          ],
+          "return_type": "Str"
+        },
+        {
+          "name": "Verify",
+          "params": [
+            {
+              "default": null,
+              "name": "summary",
+              "type": "Str"
+            }
+          ],
+          "return_type": "List<FactCheckResult>"
+        },
+        {
+          "name": "Compile",
+          "params": [
+            {
+              "default": null,
+              "name": "facts",
+              "type": "List<FactCheckResult>"
+            },
+            {
+              "default": null,
+              "name": "summary",
+              "type": "Str"
+            },
+            {
+              "default": null,
+              "name": "sources",
+              "type": "List<SearchResult>"
+            }
+          ],
+          "return_type": "ResearchReport"
+        }
+      ]
+    }
+  ],
+  "imports": [
+    {
+      "names": [
+        "Chunk"
+      ],
+      "source": "axon:types"
+    }
+  ],
+  "notes": [
+    "runtime plan is inspection-only",
+    "all executable capabilities remain disabled by Runtime RFC #001"
+  ],
+  "prompts": [],
+  "rags": [
+    {
+      "annotations": [],
+      "chunker": "Chunker::sliding(size: 1024, overlap: 128)",
+      "embedder": "@openai/text-embed-3",
+      "indexing_enabled": false,
+      "methods": [
+        {
+          "annotations": [],
+          "body_line_count": 2,
+          "has_body": true,
+          "name": "retrieve",
+          "params": [
+            {
+              "default": null,
+              "name": "query",
+              "type": "Str"
+            },
+            {
+              "default": "3",
+              "name": "top_k",
+              "type": "Int"
+            }
+          ],
+          "return_type": "List<Chunk>"
+        }
+      ],
+      "name": "ResearchDocs",
+      "retrieval_enabled": false,
+      "source": "\"./knowledge_base/**/*.md\"",
+      "store": "VectorDB::in_memory()"
+    }
+  ],
+  "source_path": "examples/research_pipeline.ax",
+  "tools": [
+    {
+      "annotations": [],
+      "body_line_count": 6,
+      "docstring_count": 1,
+      "executable": false,
+      "has_body": true,
+      "name": "WebSearch",
+      "params": [
+        {
+          "default": null,
+          "name": "query",
+          "type": "Str"
+        },
+        {
+          "default": "5",
+          "name": "max_results",
+          "type": "Int"
+        }
+      ],
+      "return_type": "Result<List<SearchResult>, ToolError>"
+    },
+    {
+      "annotations": [],
+      "body_line_count": 1,
+      "docstring_count": 1,
+      "executable": false,
+      "has_body": true,
+      "name": "ExtractFacts",
+      "params": [
+        {
+          "default": null,
+          "name": "text",
+          "type": "Str"
+        }
+      ],
+      "return_type": "Result<List<Str>, ToolError>"
+    }
+  ],
+  "type_aliases": [
+    {
+      "field_count": 2,
+      "name": "ResearchQuery",
+      "type_params": [],
+      "value": "{ topic: Str, depth: \"quick\" | \"deep\" = \"quick\" }"
+    },
+    {
+      "field_count": 3,
+      "name": "SearchResult",
+      "type_params": [],
+      "value": "{ source: Str, snippet: Str, relevance: Float }"
+    },
+    {
+      "field_count": 3,
+      "name": "FactCheckResult",
+      "type_params": [],
+      "value": "{ claim: Str, verdict: \"confirmed\" | \"plausible\" | \"disputed\" | \"unverified\", confidence: Float }"
+    },
+    {
+      "field_count": 5,
+      "name": "ResearchReport",
+      "type_params": [],
+      "value": "{ topic: Str, summary: Str, sources: List<SearchResult>, facts: List<FactCheckResult>, confidence: Float }"
+    }
+  ]
+}

@@ -7,8 +7,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub mod expression;
+pub mod evaluator;
 pub mod fuzz;
 pub mod bench;
+pub mod validator;
+pub mod type_checker;
+pub mod ir_compiler;
+pub mod codegen;
 
 // ---------------------------------------------------------------------------
 // Primitives
@@ -167,9 +172,12 @@ pub struct AgentDef {
     #[serde(default)]
     pub annotations: Vec<Annotation>,
         pub workers: Option<String>,
+    #[serde(default = "default_agent_version")]
+    pub version: String,
 }
 
 fn default_agent_kind() -> String { "agent".to_string() }
+fn default_agent_version() -> String { "0.1.0".to_string() }
 
 // ---------------------------------------------------------------------------
 // Flow
@@ -728,6 +736,7 @@ impl<'a> Parser<'a> {
         let mut tools: Vec<String> = Vec::new();
         let mut memory: Option<MemoryDecl> = None;
         let mut methods: Vec<MethodDef> = Vec::new();
+        let mut version = String::from("0.1.0");
         self.skip_ws_and_comments();
         while !self.starts_with("}") && self.pos < self.source.len() {
             self.skip_ws_and_comments();
@@ -765,13 +774,17 @@ impl<'a> Parser<'a> {
                         let val = self.take_until_any(&['\n', '\r']).trim().to_string();
                         memory = Some(self.parse_memory_decl(&val));
                     }
+                    "version" => {
+                        let val = self.take_until_any(&['\n', '\r']).trim().to_string();
+                        version = val.trim_matches('"').to_string();
+                    }
                     _ => { self.take_until_any(&['\n', '\r']); }
                 }
             }
             self.skip_ws_and_comments();
         }
         self.expect_char('}')?;
-        Ok(AgentDef { kind: "agent".to_string(), name, model, tools, memory, methods, annotations, workers: None })
+        Ok(AgentDef { kind: "agent".to_string(), name, model, tools, memory, methods, annotations, workers: None, version })
     }
 
     fn parse_memory_decl(&self, text: &str) -> MemoryDecl {
@@ -1408,6 +1421,57 @@ pub mod wasm {
             Err(e) => Err(format!("Expression parse error: {}", e)),
         }
     }
+
+    /// Evaluate an AXON expression (given as AST JSON) with a scope (JSON object).
+    /// Returns the result as JSON, or an error JSON string.
+    #[wasm_bindgen]
+    pub fn evaluate_expr(expr_json: &str, scope_json: &str, max_depth: usize) -> Result<String, String> {
+        crate::evaluator::evaluate_json(expr_json, scope_json, max_depth)
+    }
+
+    /// Validate AXON source and return diagnostics JSON.
+    #[wasm_bindgen]
+    pub fn validate_axon(source: &str) -> Result<String, String> {
+        match parse_source(source) {
+            Ok(ir) => {
+                let diags = crate::validator::validate(&ir);
+                serde_json::to_string_pretty(&diags)
+                    .map_err(|e| format!("Serialization error: {}", e))
+            }
+            Err(e) => Err(format!("Parse error: {}", e)),
+        }
+    }
+
+    /// Compile AXON source (parse + validate) and return IR JSON.
+    /// Returns error string if validation fails.
+    #[wasm_bindgen]
+    pub fn compile_axon(source: &str) -> Result<String, String> {
+        match crate::ir_compiler::compile_source(source) {
+            Ok(ir) => serde_json::to_string_pretty(&ir)
+                .map_err(|e| format!("Serialization error: {}", e)),
+            Err(diags) => {
+                let msgs: Vec<String> = diags.iter().map(|d| d.format()).collect();
+                Err(msgs.join("\n"))
+            }
+        }
+    }
+
+    /// Generate code from AXON source for the given target (go, rust, typescript, mcp).
+    #[wasm_bindgen]
+    pub fn codegen_axon(source: &str, target: &str) -> Result<String, String> {
+        let ir = crate::parse_source(source)
+            .map_err(|e| format!("Parse error: {}", e))?;
+        Ok(crate::codegen::generate(&ir, target))
+    }
+
+    /// Get AST snapshot JSON from AXON source.
+    #[wasm_bindgen]
+    pub fn ast_snapshot(source: &str) -> Result<String, String> {
+        let ir = crate::parse_source(source)
+            .map_err(|e| format!("Parse error: {}", e))?;
+        crate::ir_compiler::ir_to_ast_json(&serde_json::to_string_pretty(&ir)
+            .map_err(|e| format!("Serialization error: {}", e))?)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1419,6 +1483,9 @@ pub mod python {
     use pyo3::prelude::*;
     use crate::parse_source;
     use crate::expression::parse_expression;
+    use crate::validator;
+    use crate::type_checker;
+    use crate::ir_compiler;
 
     /// Parse AXON source text and return IR as a Python dict.
     #[pyfunction]
@@ -1454,10 +1521,110 @@ pub mod python {
         }
     }
 
+    /// Validate AXON source and return a list of diagnostic dicts.
+    #[pyfunction]
+    fn validate_axon(source: &str) -> PyResult<Py<PyAny>> {
+        match parse_source(source) {
+            Ok(ir) => {
+                let diags = validator::validate(&ir);
+                Python::with_gil(|py| {
+                    let json = serde_json::to_string(&diags)
+                        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("serialization: {}", e)))?;
+                    let json_mod = py.import("json")?;
+                    let list = json_mod.getattr("loads")?.call1((json,))?;
+                    Ok(list.into())
+                })
+            }
+            Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string())),
+        }
+    }
+
+    /// Type-check AXON source and return a list of diagnostic dicts.
+    #[pyfunction]
+    fn check_types(source: &str) -> PyResult<Py<PyAny>> {
+        match parse_source(source) {
+            Ok(ir) => {
+                let diags = type_checker::check_types(&ir);
+                Python::with_gil(|py| {
+                    let json = serde_json::to_string(&diags)
+                        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("serialization: {}", e)))?;
+                    let json_mod = py.import("json")?;
+                    let list = json_mod.getattr("loads")?.call1((json,))?;
+                    Ok(list.into())
+                })
+            }
+            Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string())),
+        }
+    }
+
+    /// Compile AXON source to IR JSON (parse + validate + serialize).
+    #[pyfunction]
+    fn compile_axon(source: &str) -> PyResult<Py<PyAny>> {
+        match ir_compiler::compile_source(source) {
+            Ok(ir) => {
+                Python::with_gil(|py| {
+                    let json = serde_json::to_string(&ir)
+                        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("serialization: {}", e)))?;
+                    let json_mod = py.import("json")?;
+                    let dict = json_mod.getattr("loads")?.call1((json,))?;
+                    Ok(dict.into())
+                })
+            }
+            Err(diags) => {
+                let msgs: Vec<String> = diags.iter().map(|d| d.format()).collect();
+                Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(msgs.join("\n")))
+            }
+        }
+    }
+
+    /// Evaluate an AXON expression AST (JSON string) with a scope (JSON string).
+    /// Returns the evaluated result as a Python object, or raises ValueError on error.
+    #[pyfunction]
+    fn evaluate_expr(expr_json: &str, scope_json: &str, max_depth: usize) -> PyResult<Py<PyAny>> {
+        match crate::evaluator::evaluate_json(expr_json, scope_json, max_depth) {
+            Ok(result_json) => {
+                Python::with_gil(|py| {
+                    let json_mod = py.import("json")?;
+                    let result = json_mod.getattr("loads")?.call1((result_json,))?;
+                    Ok(result.into())
+                })
+            }
+            Err(err_json) => {
+                // Try to parse the error JSON for a structured error
+                Python::with_gil(|py| {
+                    let json_mod = py.import("json")?;
+                    let err_dict = json_mod.getattr("loads")?.call1((err_json,))?;
+                    let msg = err_dict.getattr("message")?.extract::<String>()?;
+                    Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(msg))
+                })
+            }
+        }
+    }
+
+    /// Convert IR JSON to AST JSON (for round-trip from .axonir files).
+    #[pyfunction]
+    fn ir_to_ast(ir_json: &str) -> PyResult<Py<PyAny>> {
+        match ir_compiler::ir_to_ast_json(ir_json) {
+            Ok(json) => {
+                Python::with_gil(|py| {
+                    let json_mod = py.import("json")?;
+                    let list = json_mod.getattr("loads")?.call1((json,))?;
+                    Ok(list.into())
+                })
+            }
+            Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(e)),
+        }
+    }
+
     #[pymodule]
     fn axon_parser(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_function(wrap_pyfunction!(parse_axon, m)?)?;
         m.add_function(wrap_pyfunction!(parse_expr, m)?)?;
+        m.add_function(wrap_pyfunction!(validate_axon, m)?)?;
+        m.add_function(wrap_pyfunction!(check_types, m)?)?;
+        m.add_function(wrap_pyfunction!(compile_axon, m)?)?;
+        m.add_function(wrap_pyfunction!(ir_to_ast, m)?)?;
+        m.add_function(wrap_pyfunction!(evaluate_expr, m)?)?;
         Ok(())
     }
 }

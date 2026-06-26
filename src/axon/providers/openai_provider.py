@@ -6,7 +6,7 @@ the ``openai`` package to be installed (``pip install openai``).
 
 from __future__ import annotations
 
-from typing import AsyncIterator, Iterator
+from typing import AsyncIterator, Iterator, Optional
 from result import Result, Ok, Err
 
 from axon.provider_plugin import (
@@ -50,6 +50,7 @@ class OpenAIProvider(ProviderPlugin):
         max_tokens: int,
         temperature: float = 0.7,
         stream: bool = False,
+        response_format: Optional[str] = None,
     ) -> Result[str, ProviderError]:
         """Invoke OpenAI chat completions API."""
         try:
@@ -73,12 +74,15 @@ class OpenAIProvider(ProviderPlugin):
         client = openai.OpenAI(api_key=api_key, base_url=config.base_url)
 
         try:
-            response = client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=max_tokens,
-                temperature=temperature,
-            )
+            kwargs = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+            if response_format:
+                kwargs["response_format"] = {"type": "json_object"}
+            response = client.chat.completions.create(**kwargs)
             content = response.choices[0].message.content or ""
             return Ok(content)
 

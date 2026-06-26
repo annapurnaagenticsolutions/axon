@@ -35,8 +35,12 @@ OPTIONAL_RUNTIME_MODULES = {
     "requests",
     "opentelemetry",
     "psycopg",
+    "psycopg2",
     "keyring",
     "hvac",
+    "sentence_transformers",
+    "chromadb",
+    "axon_parser",
 }
 
 # Keep a small fallback for interpreters where sys.stdlib_module_names is absent.
@@ -345,12 +349,19 @@ def _audit_source_imports(project: Path, source_file: Path, rel_path: Path) -> l
     optional_files = {
         "api_server.py",
         "cli.py",
+        "dashboard.py",
         "distributed_bus.py",
+        "native_evaluator.py",
         "otel_exporter.py",
         "otlp_exporter.py",
+        "playground_server.py",
         "postgres_store.py",
+        "rag_embedder.py",
+        "runtime.py",
+        "runtime_cache.py",
         "secret_manager.py",
         "service_registry.py",
+        "vector_store.py",
     }
     is_optional_file = rel_path.name in optional_files
 

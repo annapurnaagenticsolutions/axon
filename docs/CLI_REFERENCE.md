@@ -31,14 +31,15 @@ axon hygiene [path] [--json] [--write-gitignore] [--force]
 axon repo-hygiene [path] [--json] [--write-gitignore] [--force]
 axon precommit [print|install|check|run] [--path PATH] [--hook-path PATH] [--force] [--full] [--json]
 axon health [--json]
-axon run <source.ax> [--arg key=value] [--trace trace.jsonl] [--memory memory.json] [--checkpoint] [--mock] [--no-mock] [--live] [--provider openai|anthropic|mock] [--json]
-axon agent spawn <source.ax> --name NAME [--arg key=value] [--trace trace.jsonl] [--memory memory.json] [--checkpoint] [--stream] [--mock] [--no-mock] [--live] [--provider openai|anthropic|mock]
+axon run <source.ax> [--arg key=value] [--trace trace.jsonl] [--memory memory.json] [--checkpoint] [--mock] [--no-mock] [--live] [--provider openai|anthropic|groq|mock] [--json]
+axon repl [source.ax] [--live] [--provider openai|anthropic|groq|mock]
+axon agent spawn <source.ax> --name NAME [--arg key=value] [--trace trace.jsonl] [--memory memory.json] [--checkpoint] [--stream] [--mock] [--no-mock] [--live] [--provider openai|anthropic|groq|mock]
 axon agent pause NAME
 axon agent resume NAME
 axon agent terminate NAME [--reason TEXT]
 axon agent status NAME [--json]
 axon agent list [--json]
-axon supervisor start --name NAME --strategy one_for_one|one_for_all|rest_for_one [--child source::name] [--max-restarts N] [--max-seconds S] [--mock] [--no-mock] [--live] [--provider openai|anthropic|mock]
+axon supervisor start --name NAME --strategy one_for_one|one_for_all|rest_for_one [--child source::name] [--max-restarts N] [--max-seconds S] [--mock] [--no-mock] [--live] [--provider openai|anthropic|groq|mock]
 axon supervisor stop NAME [--reason TEXT]
 axon supervisor status NAME [--json]
 axon watch start <source.ax> --name NAME [--arg key=value] [--poll-interval MS] [--mock] [--no-mock] [--live] [--provider openai|anthropic|mock]
@@ -294,6 +295,14 @@ Execute an AXON agent method body or flow with mock tool dispatch and expression
 
 **Real provider mode:** `--no-mock` resolves the agent's `model: @provider/model` reference to a real provider plugin and makes actual LLM API calls. Requires the provider SDK (e.g., `openai`) and a valid API key in the environment.
 
+## Interactive REPL
+
+```bash
+axon repl [source.ax] [--live] [--provider openai|anthropic|groq|mock]
+```
+
+Launch an interactive read-eval-print loop for AXON expressions. Optionally load a `.ax` source file to populate the tool registry. Supports `--live` with `--provider` for real LLM calls. REPL commands include `:help`, `:quit`, `:tools`, `:memory`, `:load <file>`.
+
 ## Traces
 
 ```bash
@@ -459,14 +468,104 @@ Builds and deploys an AXON app as a Docker image or to cloud.
 axon debug <trace.jsonl> [--non-interactive]
 ```
 
-Interactive AEL trace debugger.
+Interactive AEL trace debugger with step-through navigation, breakpoints, variable watches, memory inspection, and export.
+
+**Navigation:**
+- `n` / `next` — step forward one event
+- `p` / `prev` — step backward one event
+- `c` / `cont` / `continue` — run until breakpoint or end
+- `goto <idx>` — jump to event index (1-based)
+- `search <text>` — find next event containing text
+- `bt` / `backtrace` — show navigation history
+
+**Inspection:**
+- `mem` / `memory` — show memory state
+- `info` / `summary` — show session summary
+- `stats` — show trace statistics (event counts, agent breakdown)
+- `range [before] [after]` — show events around current position
+- `list [type] [agent=X]` — list events (optionally filtered)
+
+**Breakpoints:**
+- `bp` — list breakpoints
+- `bp type=act agent=Bot tool=Search once` — add breakpoint
+- `bp mem=result value=found` — break when memory key equals value
+- `del <idx>` — remove breakpoint
+
+**Watches:**
+- `watch <key>` — watch a memory key for changes
+- `w` / `watches` — list watches
+- `unwatch <idx>` — remove watch
+
+**Export:**
+- `export <file>` — export memory state as JSON
+- `export <file> type=act` — export filtered events as JSONL
 
 ## `axon profile`
 
 ```bash
-axon profile <trace.jsonl> [--json]
+axon profile <trace.jsonl> [--json] [--csv] [--tool-csv]
+                [--hotspot-threshold <ms>] [--max-hotspots <n>]
 ```
 
 Profiles an AEL trace for execution time breakdown.
 
+**Output modes:**
+- Default — human-readable summary with per-agent, per-tool, think timing, and hotspots
+- `--json` — structured JSON with all metrics
+- `--csv` — per-event timing data as CSV (index, event_type, agent, tool, latency_ms, tokens, description)
+- `--tool-csv` — per-tool summary as CSV (tool, call_count, total_ms, avg_ms, p50_ms, p95_ms, p99_ms)
+
+**Metrics:**
+- Per-agent: total time, event count, act calls, think count/tokens
+- Per-tool: call count, total/avg latency, p50/p95/p99 percentiles
+- Think timing: count, total/avg latency, p50/p95/p99, tokens/sec throughput
+- Hotspots: events exceeding `--hotspot-threshold` (default 100ms), sorted by latency, capped at `--max-hotspots` (default 10)
+
 This check is inspection-only and does not execute agents, call providers, dispatch tools, resolve secrets, import FastMCP, mutate memory, index RAG data, execute flows, or replay traces.
+
+## `axon replay`
+
+```bash
+axon replay <trace.jsonl> [--json]
+axon replay <baseline.jsonl> --compare <candidate.jsonl> [--threshold <pct>] [--json]
+```
+
+Replays a trace event-by-event with timing, or compares two traces for regression detection.
+
+**Replay mode (no `--compare`):**
+- Walks each event with per-event latency and cumulative time
+- Outputs step-by-step timing breakdown
+
+**Comparison mode (`--compare`):**
+- Compares baseline vs candidate trace
+- Detects per-tool and per-agent latency regressions
+- Reports new/removed tools and agents
+- `--threshold` sets the regression percentage threshold (default: 10%)
+
+This check is inspection-only and does not execute agents, call providers, or dispatch tools.
+
+## `axon dashboard`
+
+```bash
+axon dashboard [--trace <file>] [--metrics] [--json] [--serve [PORT]]
+```
+
+Displays AXON runtime observability data. With `--trace`, summarizes a trace JSONL file. With `--metrics`, includes global metrics collector output. With `--serve`, launches an interactive web dashboard on the given port (default: 8050).
+
+**Options:**
+- `--trace <file>` — path to a trace JSONL file to summarize
+- `--metrics` — include global metrics collector output
+- `--json` — output dashboard as JSON
+- `--serve [PORT]` — serve interactive web dashboard on given port (default: 8050)
+
+## `axon playground`
+
+```bash
+axon playground [--host HOST] [--port PORT]
+```
+
+Launches the AXON web playground — a browser-based editor for parsing, validating, and generating code from AXON source. Supports WASM and Python server backends, multi-file editing, live codegen sync, error highlighting, and ZIP export.
+
+**Options:**
+- `--host HOST` — host to bind the playground server (default: localhost)
+- `--port PORT` — port to serve the playground on (default: 8080)

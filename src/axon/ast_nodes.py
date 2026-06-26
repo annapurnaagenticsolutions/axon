@@ -115,4 +115,5 @@ class AgentDecl:
     annotations: list[Annotation] = field(default_factory=list)
     methods: list[MethodDecl] = field(default_factory=list)
     workers: Optional[str] = None
+    version: str = "0.1.0"           # semantic version for A/B testing
     line: int = 0

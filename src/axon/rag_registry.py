@@ -15,7 +15,7 @@ from result import Result, Ok, Err
 
 from axon.ast_nodes import MethodDecl, RagDecl
 from axon.evaluator import Scope, evaluate
-from axon.rag_embedder import mock_embed
+from axon.rag_embedder import mock_embed, create_embed_fn, get_embedder_dimension, parse_embedder_ref
 from axon.rag_indexer import index_rag
 from axon.tool_registry import _infer_body_expr, _parse_default
 from axon.tool_registry_errors import ToolError, ToolErrorKind
@@ -32,11 +32,20 @@ class RagRegistry:
         self._indexed: set[str] = set()
         self._default_dimension = default_dimension
         self._source_base = source_base
+        self._embed_fns: dict[str, Any] = {}
 
     def register(self, rag: RagDecl) -> None:
         """Register a RAG declaration."""
         self._rags[rag.name] = rag
-        self._stores[rag.name] = VectorStore(dimension=self._default_dimension)
+        # Determine dimension from embedder reference, falling back to default
+        provider, _ = parse_embedder_ref(rag.embedder) if rag.embedder else ("mock", "")
+        if provider == "mock":
+            dim = self._default_dimension
+        else:
+            dim = get_embedder_dimension(rag.embedder) if rag.embedder else self._default_dimension
+        self._stores[rag.name] = VectorStore(dimension=dim)
+        # Create embed function based on embedder reference
+        self._embed_fns[rag.name] = create_embed_fn(rag.embedder) if rag.embedder else mock_embed
 
     def register_all(self, declarations: list) -> None:
         """Register every RagDecl found in a list of parsed declarations."""
@@ -132,7 +141,7 @@ class RagRegistry:
             self._indexed.add(rag_name)
             if emitter is not None:
                 emitter.rag_index_start(rag_name=rag_name, source_pattern=rag.source)
-            stats = index_rag(rag, store, source_base=self._source_base)
+            stats = index_rag(rag, store, source_base=self._source_base, embed_fn=self._embed_fns.get(rag_name, mock_embed))
             if emitter is not None:
                 emitter.rag_index_end(
                     rag_name=rag_name,
@@ -161,7 +170,8 @@ class RagRegistry:
 
         # Inject the vector store and embed function
         scope.set("store", store)
-        scope.set("embed", mock_embed)
+        embed_fn = self._embed_fns.get(rag_name, mock_embed)
+        scope.set("embed", embed_fn)
 
         # Evaluate method body
         body_expr = method.parsed_body

@@ -139,6 +139,43 @@ agent Bot {
     assert a.methods[0].name == "run"
 
 
+def test_agent_with_version():
+    source = '''
+agent Versioned {
+    model: @anthropic/claude-4
+    tools: [Search]
+    version: "2.1.0"
+
+    fn run(q: Str) -> Result<Str, AgentError> {
+        Ok(q)
+    }
+}
+'''
+    decls = parse(source)
+    assert len(decls) == 1
+    a = decls[0]
+    assert isinstance(a, AgentDecl)
+    assert a.name == "Versioned"
+    assert a.version == "2.1.0"
+
+
+def test_agent_default_version():
+    source = '''
+agent Unversioned {
+    model: @anthropic/claude-4
+    tools: [Search]
+
+    fn run(q: Str) -> Result<Str, AgentError> {
+        Ok(q)
+    }
+}
+'''
+    decls = parse(source)
+    a = decls[0]
+    assert isinstance(a, AgentDecl)
+    assert a.version == "0.1.0"
+
+
 def test_agent_with_memory():
     source = '''
 agent Mem {

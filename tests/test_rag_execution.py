@@ -4,7 +4,12 @@ from pathlib import Path
 
 from axon.cli import run_file
 from axon.rag_chunker import sliding_window_chunks
-from axon.rag_embedder import mock_embed
+from axon.rag_embedder import (
+    mock_embed,
+    parse_embedder_ref,
+    get_embedder_dimension,
+    create_embed_fn,
+)
 from axon.rag_indexer import index_rag
 from axon.vector_store import VectorStore
 
@@ -24,6 +29,108 @@ def test_mock_embedder_dimension():
     """Mock embedder respects dimension parameter."""
     v = mock_embed("test", dimension=256)
     assert len(v) == 256
+
+
+def test_parse_embedder_ref_openai():
+    """Parse @openai/model reference."""
+    provider, model = parse_embedder_ref("@openai/text-embedding-3-small")
+    assert provider == "openai"
+    assert model == "text-embedding-3-small"
+
+
+def test_parse_embedder_ref_ollama():
+    """Parse @ollama/model reference."""
+    provider, model = parse_embedder_ref("@ollama/nomic-embed-text")
+    assert provider == "ollama"
+    assert model == "nomic-embed-text"
+
+
+def test_parse_embedder_ref_mock():
+    """Parse @mock/embed reference."""
+    provider, model = parse_embedder_ref("@mock/embed")
+    assert provider == "mock"
+    assert model == "embed"
+
+
+def test_parse_embedder_ref_no_prefix():
+    """Parse reference without @ prefix."""
+    provider, model = parse_embedder_ref("openai/text-embedding-3-small")
+    assert provider == "openai"
+    assert model == "text-embedding-3-small"
+
+
+def test_parse_embedder_ref_no_slash():
+    """Parse reference without slash returns mock fallback."""
+    provider, model = parse_embedder_ref("mockembed")
+    assert provider == "mock"
+    assert model == "embed"
+
+
+def test_get_embedder_dimension_openai():
+    """OpenAI models return known dimensions."""
+    assert get_embedder_dimension("@openai/text-embedding-3-small") == 1536
+    assert get_embedder_dimension("@openai/text-embedding-3-large") == 3072
+    assert get_embedder_dimension("@openai/text-embedding-ada-002") == 1536
+
+
+def test_get_embedder_dimension_ollama():
+    """Ollama models return default 768."""
+    assert get_embedder_dimension("@ollama/nomic-embed-text") == 768
+
+
+def test_get_embedder_dimension_mock():
+    """Mock embedder returns 128."""
+    assert get_embedder_dimension("@mock/embed") == 128
+
+
+def test_get_embedder_dimension_unknown_openai_model():
+    """Unknown OpenAI model returns default 1536."""
+    assert get_embedder_dimension("@openai/some-future-model") == 1536
+
+
+def test_create_embed_fn_mock():
+    """Mock embedder function works correctly."""
+    fn = create_embed_fn("@mock/embed")
+    v = fn("hello world")
+    assert len(v) == 128
+    assert all(-1.0 <= x <= 1.0 for x in v)
+
+
+def test_create_embed_fn_openai_fallback():
+    """OpenAI embedder falls back to mock when no API key."""
+    import os
+    old_key = os.environ.pop("OPENAI_API_KEY", None)
+    try:
+        fn = create_embed_fn("@openai/text-embedding-3-small")
+        v = fn("hello world")
+        # Should fall back to mock (128 dimensions)
+        assert len(v) == 128
+    finally:
+        if old_key is not None:
+            os.environ["OPENAI_API_KEY"] = old_key
+
+
+def test_create_embed_fn_ollama_fallback():
+    """Ollama embedder returns real embeddings if server is up, else falls back to mock."""
+    fn = create_embed_fn("@ollama/nomic-embed-text")
+    v = fn("hello world")
+    # Either real Ollama (768) or mock fallback (128)
+    assert len(v) in (128, 768)
+
+
+def test_create_embed_fn_unknown_provider():
+    """Unknown provider falls back to mock."""
+    fn = create_embed_fn("@unknown/model")
+    v = fn("hello world")
+    assert len(v) == 128
+
+
+def test_create_embed_fn_deterministic_mock():
+    """Mock embedder via create_embed_fn is deterministic."""
+    fn = create_embed_fn("@mock/embed")
+    v1 = fn("test text")
+    v2 = fn("test text")
+    assert v1 == v2
 
 
 def test_chunker_splits_text():

@@ -14,12 +14,13 @@ from typing import Any, Optional
 from result import Result, Err, Ok
 
 from axon.parser import parse
-from axon.ast_nodes import AgentDecl, MethodDecl, RagDecl, ToolDecl
-from axon.evaluator import Scope, evaluate
+from axon.ast_nodes import AgentDecl, MethodDecl, PromptDecl, RagDecl, ToolDecl
+from axon.evaluator import Scope, evaluate as _py_evaluate
+from axon.native_evaluator import evaluate as _native_evaluate
 from axon.expression_ast import LiteralExpr, StringInterpolationExpr
 from axon.memory_store import MemoryStore
 from axon.provider_registry import resolve_provider_reference, register_provider
-from axon.providers import AnthropicProvider, MockProviderPlugin, OpenAIProvider
+from axon.providers import AnthropicProvider, GroqProvider, MockProviderPlugin, OpenAIProvider
 from axon.rag_registry import RagRegistry
 from axon.resilience import ResilientProviderWrapper, RetryConfig, CircuitBreakerConfig
 from axon.metrics import MetricsCollector, ProviderCallMetrics
@@ -27,6 +28,9 @@ from axon.sandbox import SandboxConfig, SandboxedToolRegistry
 from axon.tool_registry import MockToolRegistry, _infer_body_expr
 from axon.trace_emitter import TraceEmitter
 from axon.type_checker import validate_runtime_type
+from axon.otel_exporter import OTelExporter
+from axon.structured_logger import StructuredLogger
+from axon.permission import PermissionChecker, extract_permissions
 
 
 @dataclass
@@ -48,6 +52,16 @@ class RuntimeConfig:
     sandbox_denied_tools: set[str] = field(default_factory=set)
     strict_types: bool = False
     via_ir: bool = False  # compile .ax through IR before execution
+    native: bool = False  # use Rust parser via PyO3 when available
+    mesh_backend: Optional[str] = None  # 'redis', 'nats', or None for in-memory
+    mesh_url: Optional[str] = None  # backend URL (e.g. redis://localhost:6379)
+    cache_enabled: bool = True  # enable prompt/tool caching
+    cache_dir: Optional[Path] = None  # disk cache directory (None = memory only)
+    cache_ttl: Optional[float] = None  # default TTL in seconds (None = no expiry)
+    otel_endpoint: Optional[str] = None  # OTLP/HTTP endpoint for OpenTelemetry export
+    otel_service_name: str = "axon-runtime"  # service name for OTel spans
+    structured_log: bool = False  # emit structured JSON logs
+    granted_permissions: set[str] = field(default_factory=set)  # e.g. {"fs:read", "network:*"}
 
 
 class RuntimeExecutor:
@@ -56,6 +70,25 @@ class RuntimeExecutor:
     def __init__(self, config: RuntimeConfig):
         self.config = config
         self.metrics = MetricsCollector()
+        self.otel: Optional[OTelExporter] = None
+        if config.otel_endpoint:
+            self.otel = OTelExporter(
+                endpoint=config.otel_endpoint,
+                service_name=config.otel_service_name,
+            )
+        self.logger = StructuredLogger(enabled=config.structured_log)
+        # Initialize caches (disabled when replaying or streaming)
+        self._cache = None
+        self._prompt_cache = None
+        self._tool_cache = None
+        if config.cache_enabled and config.replay_path is None and not config.stream:
+            from axon.runtime_cache import Cache, PromptCache, ToolResultCache
+            self._cache = Cache(
+                cache_dir=config.cache_dir,
+                default_ttl=config.cache_ttl,
+            )
+            self._prompt_cache = PromptCache(self._cache)
+            self._tool_cache = ToolResultCache(self._cache)
 
     def execute(self) -> Result[str, str]:
         """Execute the AXON source file.
@@ -63,6 +96,16 @@ class RuntimeExecutor:
         Returns:
             Ok(output) on success, Err(message) on failure.
         """
+        self.logger.info("runtime.execute.start", source=str(self.config.source_path))
+
+        # Start OTel root span if configured
+        otel_span = None
+        if self.otel is not None:
+            otel_span = self.otel.start_span(
+                "axon.execute",
+                attributes={"source": str(self.config.source_path)},
+            )
+
         # Register provider plugins (idempotent if already registered)
         try:
             register_provider(OpenAIProvider())
@@ -72,6 +115,10 @@ class RuntimeExecutor:
             register_provider(AnthropicProvider())
         except Exception:
             pass  # import failed (anthropic not installed)
+        try:
+            register_provider(GroqProvider())
+        except Exception:
+            pass  # import failed (openai not installed for groq)
         try:
             register_provider(MockProviderPlugin())
         except Exception:
@@ -86,6 +133,18 @@ class RuntimeExecutor:
             from axon.ir_compiler import compile_to_ir, ir_to_ast
             ir = compile_to_ir(self.config.source_path)
             declarations = ir_to_ast(ir)
+        elif self.config.native:
+            source_text = self.config.source_path.read_text(encoding="utf-8")
+            try:
+                import axon_parser
+                ir_dict = axon_parser.parse_axon(source_text)
+                from axon.ir_schema import AxonIR
+                from axon.ir_compiler import ir_to_ast
+                ir = AxonIR.from_dict(ir_dict)
+                declarations = ir_to_ast(ir)
+            except ImportError:
+                # Rust parser not available, fall back to Python parser
+                declarations = parse(source_text, parse_expressions=True)
         else:
             source_text = self.config.source_path.read_text(encoding="utf-8")
             declarations = parse(source_text, parse_expressions=True)
@@ -97,19 +156,61 @@ class RuntimeExecutor:
                 if isinstance(decl, ToolDecl):
                     tool_return_types[decl.name] = decl.return_type
 
+        # Extract per-declaration cache TTLs from @cache(ttl: N) annotations
+        tool_cache_ttls: dict[str, Optional[float]] = {}
+        prompt_cache_ttls: dict[str, Optional[float]] = {}
+        prompt_template_ttls: list[tuple[str, float]] = []  # (template_prefix, ttl) for matching
+        for decl in declarations:
+            if isinstance(decl, (ToolDecl, PromptDecl)):
+                for ann in decl.annotations:
+                    if ann.name == "cache" and "ttl" in ann.args:
+                        try:
+                            ttl_val = float(ann.args["ttl"])
+                        except ValueError:
+                            continue
+                        if isinstance(decl, ToolDecl):
+                            tool_cache_ttls[decl.name] = ttl_val
+                        else:
+                            prompt_cache_ttls[decl.name] = ttl_val
+                            # Store static prefix (before first {variable}) for matching rendered prompts
+                            static_match = re.split(r"\{[A-Za-z_][A-Za-z0-9_]*\}", decl.template.lstrip(), maxsplit=1)
+                            prefix = static_match[0][:80] if static_match else ""
+                            if prefix:
+                                prompt_template_ttls.append((prefix, ttl_val))
+
         from axon.http_client import http_builtins
         from axon.fs_client import fs_builtins
+        from axon.db_client import db_builtins
+        from axon.github_client import github_builtins
+        from axon.slack_client import slack_builtins
+        from axon.sandbox_client import sandbox_builtins
 
         emitter = TraceEmitter()
         builtins = http_builtins()
         builtins.update(fs_builtins(base_dir=self.config.source_path.parent))
+        builtins.update(db_builtins(base_dir=self.config.source_path.parent))
+        builtins.update(github_builtins())
+        builtins.update(slack_builtins())
+        builtins.update(sandbox_builtins())
         inner_registry = MockToolRegistry(max_depth=self.config.sandbox_max_depth, builtins=builtins)
         inner_registry.register_all(declarations)
+
+        # Build permission checker and deny tools whose permissions aren't granted
+        perm_checker = PermissionChecker(granted=self.config.granted_permissions)
+        tool_permissions = extract_permissions(declarations)
+        denied_by_perm: set[str] = set()
+        for tool_name in tool_permissions:
+            tool_decl = next((d for d in declarations if isinstance(d, ToolDecl) and d.name == tool_name), None)
+            if tool_decl is not None:
+                allowed, denied_perm = perm_checker.check_tool(tool_decl)
+                if not allowed:
+                    denied_by_perm.add(tool_name)
+                    self.logger.warn("permission.denied", tool=tool_name, permission=denied_perm)
 
         sandbox_config = SandboxConfig(
             timeout_ms=self.config.sandbox_timeout_ms,
             max_eval_depth=self.config.sandbox_max_depth,
-            denied_tools=self.config.sandbox_denied_tools,
+            denied_tools=self.config.sandbox_denied_tools | denied_by_perm,
         )
         registry = SandboxedToolRegistry(inner_registry, sandbox_config, builtins=builtins)
 
@@ -220,14 +321,52 @@ class RuntimeExecutor:
                 source_file=str(self.config.source_path),
             )
 
-        # Create shared message bus for inter-agent communication
-        from axon.message_bus import MessageBus
-        message_bus = MessageBus()
+        # Create message bus for inter-agent communication
+        # Use DistributedBus when mesh_backend is configured, else in-memory MessageBus
+        distributed_bus = None
+        service_registry = None
+        if self.config.mesh_backend:
+            from axon.distributed_bus import DistributedBus
+            from axon.service_registry import ServiceRegistry
+            try:
+                distributed_bus = DistributedBus(
+                    backend=self.config.mesh_backend,
+                    url=self.config.mesh_url,
+                    agent_name=agent.name if agent else "axon",
+                )
+                service_registry = ServiceRegistry(
+                    backend=self.config.mesh_backend,
+                    url=self.config.mesh_url,
+                )
+            except ImportError:
+                # Backend dependency not installed; fall back to in-memory
+                pass
+
+            # Register this agent in the service registry
+            if service_registry is not None and agent is not None:
+                from axon.service_registry import AgentService
+                import socket
+                service_registry.register(AgentService(
+                    name=agent.name,
+                    host=socket.gethostname(),
+                    port=0,
+                    capabilities=[t.name for t in agent.tools] if hasattr(agent, 'tools') else [],
+                ))
+
+        if distributed_bus is not None:
+            message_bus = None  # DistributedBus replaces MessageBus
+        else:
+            from axon.message_bus import MessageBus
+            message_bus = MessageBus()
 
         emitter.method_start(method_name=run_method.name, arguments=self.config.args)
 
-        result = self._evaluate_body(run_method, scope, registry, emitter, provider, model_name, agent_registry, rag_registry, memory_store, replayer=replayer, message_bus=message_bus, agent_name=agent.name, metrics_collector=self.metrics, tool_return_types=tool_return_types)
+        result = self._evaluate_body(run_method, scope, registry, emitter, provider, model_name, agent_registry, rag_registry, memory_store, replayer=replayer, message_bus=message_bus, agent_name=agent.name, metrics_collector=self.metrics, tool_return_types=tool_return_types, distributed_bus=distributed_bus, service_registry=service_registry, tool_cache_ttls=tool_cache_ttls, prompt_cache_ttls=prompt_cache_ttls, prompt_template_ttls=prompt_template_ttls)
         registry.shutdown()
+        if distributed_bus is not None:
+            if service_registry is not None and agent is not None:
+                service_registry.unregister(agent.name)
+            distributed_bus.close()
         if isinstance(result, Err):
             if replayer is not None:
                 emitter.replay_end(result_type="error", result_summary=str(result.err_value))
@@ -254,7 +393,15 @@ class RuntimeExecutor:
             emitter.replay_end(result_type="ok", result_summary=summary)
         emitter.agent_end(result_type="ok", result_summary=summary)
         self._maybe_write_trace(emitter)
+        self._end_otel_span(otel_span, status="OK")
+        self.logger.info("runtime.execute.end", result="ok", summary=summary[:100])
         return Ok(str(value))
+
+    def _end_otel_span(self, span: Any, status: str = "OK") -> None:
+        """End an OTel span and flush if root."""
+        if self.otel is not None and span is not None:
+            self.otel.end_span(status=status)
+            self.otel.flush()
 
     def _evaluate_body(
         self,
@@ -272,6 +419,11 @@ class RuntimeExecutor:
         agent_name: str = "",
         metrics_collector: MetricsCollector | None = None,
         tool_return_types: dict[str, str] | None = None,
+        distributed_bus: Any | None = None,
+        service_registry: Any | None = None,
+        tool_cache_ttls: dict[str, Optional[float]] | None = None,
+        prompt_cache_ttls: dict[str, Optional[float]] | None = None,
+        prompt_template_ttls: list[tuple[str, float]] | None = None,
     ) -> Result[Any, str]:
         from axon.trace_replayer import TraceReplayer
         body_text = method.body.strip()
@@ -280,6 +432,18 @@ class RuntimeExecutor:
         def _tool_dispatch(name: str, kwargs: dict[str, Any]) -> Result[Any, str]:
             if replayer is not None:
                 return replayer.replay_tool_dispatch(name, kwargs)
+            # Check tool result cache (skip if @cache(ttl: 0) disables caching for this tool)
+            _tool_ttl_disabled = tool_cache_ttls is not None and tool_cache_ttls.get(name) == 0.0
+            if self._tool_cache is not None and not _tool_ttl_disabled:
+                cached = self._tool_cache.get(name, kwargs)
+                if cached is not None:
+                    emitter.tool_dispatch(method_name=method.name, tool_name=name, arguments=kwargs)
+                    emitter.tool_return(method_name=method.name, tool_name=name, result_type="ok", result_summary=self._value_summary(cached) + " [cached]")
+                    if metrics_collector is not None:
+                        metrics_collector.increment_counter("tool_cache_hits", labels={"tool": name})
+                    return Ok(cached)
+                if metrics_collector is not None:
+                    metrics_collector.increment_counter("tool_cache_misses", labels={"tool": name})
             emitter.tool_dispatch(method_name=method.name, tool_name=name, arguments=kwargs)
             tool_start = time.time()
             res = registry.dispatch(name, kwargs)
@@ -312,6 +476,10 @@ class RuntimeExecutor:
                             success=False,
                         ))
                     return Err(msg)
+            # Store in tool cache (with per-declaration TTL if specified)
+            if self._tool_cache is not None and not _tool_ttl_disabled:
+                _tool_ttl = tool_cache_ttls.get(name) if tool_cache_ttls else None
+                self._tool_cache.put(name, kwargs, value, ttl=_tool_ttl)
             emitter.tool_return(method_name=method.name, tool_name=name, result_type="ok", result_summary=self._value_summary(value))
             if metrics_collector is not None:
                 from axon.metrics import ToolDispatchMetrics
@@ -369,6 +537,59 @@ class RuntimeExecutor:
             scope.set("send", _send)
             scope.set("receive", _receive)
             scope.set("receive_blocking", _receive_blocking)
+
+        # Inject distributed bus and service registry for cross-process communication
+        if distributed_bus is not None:
+            scope.set("__distributed_bus__", distributed_bus)
+
+            def _dist_send(recipient: str, message: Any) -> None:
+                distributed_bus.send(recipient, message)
+                summary = str(message)[:50]
+                emitter.message_sent(from_agent=agent_name, to_agent=recipient, message_summary=summary)
+
+            def _dist_receive(timeout_ms: int = 0) -> Any | None:
+                result = distributed_bus.receive(timeout_ms=timeout_ms)
+                if result is not None:
+                    summary = str(result)[:50]
+                    emitter.message_received(agent_name=agent_name, message_summary=summary)
+                return result
+
+            def _dist_broadcast(channel: str, message: Any) -> None:
+                distributed_bus.broadcast(channel, message)
+                summary = str(message)[:50]
+                emitter.message_sent(from_agent=agent_name, to_agent=f"channel:{channel}", message_summary=summary)
+
+            scope.set("send", _dist_send)
+            scope.set("receive", _dist_receive)
+            scope.set("broadcast", _dist_broadcast)
+
+        if service_registry is not None:
+            scope.set("__service_registry__", service_registry)
+
+            def _discover(pattern: str = "*") -> list[str]:
+                services = service_registry.discover(pattern)
+                return [s.name for s in services]
+
+            scope.set("discover", _discover)
+
+            if distributed_bus is not None:
+                def _remote_call(agent_name: str, tool_name: str, **kwargs: Any) -> Any:
+                    service = service_registry.get(agent_name)
+                    if service is None:
+                        return {"error": f"Agent '{agent_name}' not registered"}
+                    request = {
+                        "type": "tool_call",
+                        "tool": tool_name,
+                        "args": kwargs,
+                        "reply_to": f"axon:reply:{distributed_bus.agent_name}",
+                    }
+                    distributed_bus.send(agent_name, request)
+                    reply = distributed_bus.receive(timeout_ms=30000)
+                    if reply is None:
+                        return {"error": f"Timeout waiting for reply from '{agent_name}'"}
+                    return reply
+
+                scope.set("remote_call", _remote_call)
 
         # Inject semantic memory operations into scope
         if memory_store is not None:
@@ -444,6 +665,27 @@ class RuntimeExecutor:
                 return Ok(value)
 
             # Non-streaming path
+            # Match rendered prompt to a @cache(ttl: N) declaration by template prefix
+            _prompt_ttl: Optional[float] = None
+            _prompt_ttl_disabled = False
+            if prompt_template_ttls:
+                for prefix, ttl in prompt_template_ttls:
+                    if prompt.lstrip().startswith(prefix):
+                        _prompt_ttl = ttl
+                        _prompt_ttl_disabled = (ttl == 0.0)
+                        break
+            # Check prompt cache before calling provider (skip if @cache(ttl: 0))
+            if self._prompt_cache is not None and not _prompt_ttl_disabled:
+                cached = self._prompt_cache.get(prompt, model_id)
+                if cached is not None:
+                    emitter.model_call(method_name=method.name, model_reference=model_name, prompt_summary=prompt_summary)
+                    emitter.model_return(method_name=method.name, result_type="ok", result_summary=self._value_summary(cached) + " [cached]")
+                    if metrics_collector is not None:
+                        metrics_collector.increment_counter("prompt_cache_hits", labels={"model": model_id})
+                    return Ok(cached)
+                if metrics_collector is not None:
+                    metrics_collector.increment_counter("prompt_cache_misses", labels={"model": model_id})
+
             emitter.model_call(method_name=method.name, model_reference=model_name, prompt_summary=prompt_summary)
             call_start = time.time()
 
@@ -465,6 +707,9 @@ class RuntimeExecutor:
                 emitter.model_return(method_name=method.name, result_type="error", result_summary=res.err_value.kind.value)
                 return Err(f"Model call failed: {res.err_value}")
             value = res.ok_value
+            # Store in prompt cache (with per-declaration TTL if specified)
+            if self._prompt_cache is not None and not _prompt_ttl_disabled:
+                self._prompt_cache.put(prompt, model_id, 0.7, value, ttl=_prompt_ttl)
             emitter.model_return(method_name=method.name, result_type="ok", result_summary=self._value_summary(value))
             return Ok(value)
 
@@ -477,6 +722,38 @@ class RuntimeExecutor:
 
         from axon.evaluator import ModelCallFn
         model_call: ModelCallFn = _model_call
+
+        # Build structured model call function for think_as() expressions
+        def _structured_model_call(prompt: str, response_format: str) -> Result[Any, str]:
+            if replayer is not None:
+                return replayer.replay_model_call(prompt)
+            prompt_summary = prompt[:50] + "..." if len(prompt) > 50 else prompt
+            if provider is None:
+                return Err(f"No provider registered for model: {model_name}")
+            model_id = model_name.split("/", 1)[1] if "/" in model_name else model_name
+            emitter.model_call(method_name=method.name, model_reference=model_name, prompt_summary=prompt_summary)
+            call_start = time.time()
+
+            def _do_structured_call():
+                return provider.call(prompt=prompt, model=model_id, max_tokens=1024, response_format=response_format)
+
+            res = _resilient.execute_with_retry(_do_structured_call)
+            latency_ms = (time.time() - call_start) * 1000
+            if metrics_collector is not None:
+                metrics_collector.record_provider_call(ProviderCallMetrics(
+                    provider_name=type(provider).__name__,
+                    model=model_id,
+                    latency_ms=latency_ms,
+                    success=isinstance(res, Ok),
+                ))
+            if isinstance(res, Err):
+                emitter.model_return(method_name=method.name, result_type="error", result_summary=res.err_value.kind.value)
+                return Err(f"Model call failed: {res.err_value}")
+            value = res.ok_value
+            emitter.model_return(method_name=method.name, result_type="ok", result_summary=self._value_summary(value))
+            return Ok(value)
+
+        scope.set("__structured_call_fn__", _structured_model_call)
 
         # Build delegate wrapper that looks up agents and evaluates their run() method (or replays)
         def _delegate(agent_name: str, kwargs: dict[str, Any]) -> Result[Any, str]:
@@ -523,7 +800,7 @@ class RuntimeExecutor:
                         return Err(msg)
 
             # Recursively evaluate the target agent's body
-            sub_res = self._evaluate_body(target_method, child_scope, registry, emitter, target_provider, target_model_name, agent_registry, rag_registry, memory_store, replayer=replayer, message_bus=message_bus, agent_name=agent_name, metrics_collector=metrics_collector, tool_return_types=tool_return_types)
+            sub_res = self._evaluate_body(target_method, child_scope, registry, emitter, target_provider, target_model_name, agent_registry, rag_registry, memory_store, replayer=replayer, message_bus=message_bus, agent_name=agent_name, metrics_collector=metrics_collector, tool_return_types=tool_return_types, tool_cache_ttls=tool_cache_ttls, prompt_cache_ttls=prompt_cache_ttls, prompt_template_ttls=prompt_template_ttls)
             if isinstance(sub_res, Err):
                 emitter.delegate_return(method_name=method.name, agent_name=agent_name, result_type="error", result_summary=str(sub_res.err_value))
                 return sub_res
@@ -544,20 +821,23 @@ class RuntimeExecutor:
                 if re.search(r"\{[A-Za-z_][A-Za-z0-9_]*\}", method.parsed_body.value):
                     inferred = _infer_body_expr(body_text)
                     if inferred is not None:
-                        eval_res = evaluate(inferred, scope, kwargs_dispatch_fn=kwargs_dispatch, memory_store=memory_store, model_call_fn=model_call, delegate_fn=delegate, trace_fn=_trace_fn)
+                        _eval = _native_evaluate if self.config.native else _py_evaluate
+                        eval_res = _eval(inferred, scope, kwargs_dispatch_fn=kwargs_dispatch, memory_store=memory_store, model_call_fn=model_call, delegate_fn=delegate, trace_fn=_trace_fn)
                         if isinstance(eval_res, Err):
                             return Err(f"Evaluation error: {eval_res.err_value}")
                         return Ok(eval_res.ok_value)
 
         if method.parsed_body is not None:
-            eval_res = evaluate(method.parsed_body, scope, kwargs_dispatch_fn=kwargs_dispatch, memory_store=memory_store, model_call_fn=model_call, delegate_fn=delegate, trace_fn=_trace_fn)
+            _eval = _native_evaluate if self.config.native else _py_evaluate
+            eval_res = _eval(method.parsed_body, scope, kwargs_dispatch_fn=kwargs_dispatch, memory_store=memory_store, model_call_fn=model_call, delegate_fn=delegate, trace_fn=_trace_fn)
             if isinstance(eval_res, Err):
                 return Err(f"Evaluation error: {eval_res.err_value}")
             return Ok(eval_res.ok_value)
 
         inferred = _infer_body_expr(body_text)
         if inferred is not None:
-            eval_res = evaluate(inferred, scope, kwargs_dispatch_fn=kwargs_dispatch, memory_store=memory_store, model_call_fn=model_call, delegate_fn=delegate, trace_fn=_trace_fn)
+            _eval = _native_evaluate if self.config.native else _py_evaluate
+            eval_res = _eval(inferred, scope, kwargs_dispatch_fn=kwargs_dispatch, memory_store=memory_store, model_call_fn=model_call, delegate_fn=delegate, trace_fn=_trace_fn)
             if isinstance(eval_res, Err):
                 return Err(f"Evaluation error: {eval_res.err_value}")
             return Ok(eval_res.ok_value)

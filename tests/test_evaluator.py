@@ -3,6 +3,7 @@
 from result import Ok, Err
 
 from axon.expression_ast import (
+    ActExpr,
     AwaitExpr,
     BinaryOpExpr,
     BlockExpr,
@@ -33,6 +34,8 @@ from axon.expression_ast import (
     StringInterpolationExpr,
     UnaryOpExpr,
     VariableExpr,
+    ParExpr,
+    StructuredOutputExpr,
 )
 from axon.evaluator import Scope, evaluate
 from axon.evaluator_errors import EvalError, EvalErrorKind
@@ -697,3 +700,104 @@ def test_evaluate_discover():
     assert isinstance(result, Ok)
     assert "WorkerA" in result.ok_value
     assert "WorkerB" in result.ok_value
+
+
+def test_par_basic():
+    """par { 1 + 2, 3 + 4 } => [3, 7]"""
+    expr = ParExpr(line=1, expressions=[
+        BinaryOpExpr(line=1, op="+", left=_lit(1), right=_lit(2)),
+        BinaryOpExpr(line=1, op="+", left=_lit(3), right=_lit(4)),
+    ])
+    result = evaluate(expr, Scope())
+    assert isinstance(result, Ok)
+    assert result.ok_value == [3, 7]
+
+
+def test_par_empty():
+    """par { } => []"""
+    expr = ParExpr(line=1, expressions=[])
+    result = evaluate(expr, Scope())
+    assert isinstance(result, Ok)
+    assert result.ok_value == []
+
+
+def test_par_single():
+    """par { 42 } => [42]"""
+    expr = ParExpr(line=1, expressions=[_lit(42)])
+    result = evaluate(expr, Scope())
+    assert isinstance(result, Ok)
+    assert result.ok_value == [42]
+
+
+def test_par_with_variables():
+    """par { x * 2, x + 1 } with x=10 => [20, 11]"""
+    scope = Scope()
+    scope.set("x", 10)
+    expr = ParExpr(line=1, expressions=[
+        BinaryOpExpr(line=1, op="*", left=_var("x"), right=_lit(2)),
+        BinaryOpExpr(line=1, op="+", left=_var("x"), right=_lit(1)),
+    ])
+    result = evaluate(expr, scope)
+    assert isinstance(result, Ok)
+    assert result.ok_value == [20, 11]
+
+
+def test_par_with_act():
+    """par { act Foo(x: 1), act Bar(y: 2) } dispatches both concurrently"""
+    call_log = []
+
+    def kw_dispatch(name: str, kwargs: dict):
+        call_log.append((name, kwargs))
+        return Ok(f"{name}_result")
+
+    expr = ParExpr(line=1, expressions=[
+        ActExpr(line=1, tool_name="Foo", args=[("x", _lit(1))]),
+        ActExpr(line=1, tool_name="Bar", args=[("y", _lit(2))]),
+    ])
+    result = evaluate(expr, Scope(), kwargs_dispatch_fn=kw_dispatch)
+    assert isinstance(result, Ok)
+    assert len(result.ok_value) == 2
+    # Both tools were dispatched
+    names = sorted(c[0] for c in call_log)
+    assert names == ["Bar", "Foo"]
+
+
+def test_think_as_with_structured_fn():
+    """think_as(Str, 'prompt') calls structured_fn and returns parsed JSON."""
+    def structured_fn(prompt: str, type_str: str):
+        return Ok('"hello world"')
+
+    scope = Scope()
+    scope.set("__structured_call_fn__", structured_fn)
+
+    expr = StructuredOutputExpr(line=1, type_str="Str", prompt=_lit("test prompt"))
+    result = evaluate(expr, scope, model_call_fn=lambda p: Ok("fallback"))
+    assert isinstance(result, Ok)
+    assert result.ok_value == "hello world"
+
+
+def test_think_as_fallback_to_model_call():
+    """think_as without structured_fn falls back to model_call_fn and parses JSON."""
+    def model_call(prompt: str):
+        return Ok('{"name": "Alice", "age": 30}')
+
+    scope = Scope()
+    expr = StructuredOutputExpr(line=1, type_str="Any", prompt=_lit("test"))
+    result = evaluate(expr, scope, model_call_fn=model_call)
+    assert isinstance(result, Ok)
+    assert isinstance(result.ok_value, dict)
+    assert result.ok_value["name"] == "Alice"
+
+
+def test_think_as_type_validation_error():
+    """think_as validates response against AXON type and returns Err on mismatch."""
+    def structured_fn(prompt: str, type_str: str):
+        return Ok('"not an integer"')
+
+    scope = Scope()
+    scope.set("__structured_call_fn__", structured_fn)
+
+    expr = StructuredOutputExpr(line=1, type_str="Int", prompt=_lit("test"))
+    result = evaluate(expr, scope, model_call_fn=lambda p: Ok("0"))
+    assert isinstance(result, Err)
+    assert "validation" in result.err_value.message.lower()

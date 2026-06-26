@@ -1,5 +1,5 @@
 # AXON State & Execution Plan
-> Snapshot: 2026-06-17
+> Snapshot: 2026-06-25
 > Based on full codebase audit of D:\vision_agentic\axon
 
 ---
@@ -30,7 +30,7 @@
 - LSP server (basic diagnostics, completion, symbols)
 
 ### Quality
-- 80+ pytest tests; 14 `.ax` example files with full coverage
+- 1200+ pytest tests; 108 Rust tests; 14 `.ax` example files with full coverage
 
 ---
 
@@ -38,16 +38,11 @@
 
 | Area | Status | What's Missing |
 |------|--------|----------------|
-| **Real Provider Calls** | ✅ Partial | Plugin abstractions exist; live wiring is Phase 5. Mock providers by default |
+| **Real Provider Calls** | ✅ Complete | OpenAI, Anthropic, Groq providers with streaming; `--live`/`--no-mock`/`--provider` flags; resilience wrapper with retry + circuit breaker |
 | **Agent Lifecycle** | ✅ Complete | `spawn`, `pause`, `resume`, `terminate`, supervision tree |
-| **Distributed Runtime** | ✅ Partial | In-memory bus/registry; cross-process mesh pending |
-| **Advanced Concurrency** | ✅ Complete | `go`/`await`, `chan`/`select`, worker pools wired |
-| **Pattern Matching** | ✅ Complete | Exhaustive `match` with binding + guards |
-| **Worker Pools** | ✅ Complete | `PoolExpr` → `WorkerPool` with dispatch strategies |
-| **Model Router** | ✅ Complete | `CHEAPEST`/`FASTEST`/`QUALITY`/`FALLBACK` strategies |
-| **Real Tool Modules** | ✅ Partial | `fs`, `http` implemented; `db`, `sandbox`, `slack`, `github` pending |
-| **Production Packaging** | ✅ Complete | Docker, `axon deploy`, `axon eval`, health checks, graceful shutdown |
-| **IDE Ecosystem** | ✅ Partial | VS Code extension + syntax highlighting; debugger + profiler pending |
+| **Distributed Runtime** | ✅ Complete | Redis/NATS message bus (`--mesh`), service registry, agent discovery, remote tool dispatch (`remote_call`) |
+| **Rust Native Parser** | ✅ Complete | `axon-parser` crate with validator, type checker, IR compiler; PyO3 bindings; `--native` flag |
+| **IDE Ecosystem** | ✅ Partial | VS Code extension + syntax highlighting; debugger + profiler + trace replay with regression detection complete |
 
 ---
 
@@ -74,12 +69,12 @@
 
 ---
 
-## Next: Phase 5 — Debugging & Advanced Tooling
+## Next: Phase 5 — RAG Runtime & Advanced Tooling
 
-1. **AXON Debugger**: step-through AEL traces, inspect memory, breakpoints
-2. **Profiler**: execution time profiling per agent/method
-3. **Enhanced tool modules**: `db` (SQLite/PostgreSQL), `sandbox` (restricted execution)
-4. **Cross-process distributed runtime**: Redis/NATS message bus
+1. **RAG indexing and vector retrieval runtime**: wire embedder, chunker, vector store to real backends
+2. **Enhanced tool modules**: `db` (SQLite/PostgreSQL wire-up), `sandbox` (restricted execution)
+3. **Rust evaluator port**: port the AEL evaluator to Rust for native-speed execution
+4. **Full LSP**: autocomplete for tool names, parameter hints, go-to-definition
 
 ---
 
@@ -129,4 +124,4 @@
 
 ## Immediate Next Step
 
-**Phase 2A, Sprint 1**: Wire live provider calls behind existing `OpenAIProvider` / `AnthropicProvider` plugins and add a `--live` flag to `axon run`. The mock runtime already works; this is the smallest upstream change that unlocks real execution.
+**Phase 5**: RAG runtime (indexing + vector retrieval) and Rust evaluator port. All tool modules (`fs`, `http`, `db`, `github`, `slack`, `sandbox`), live provider integration, distributed runtime (Redis/NATS mesh), and Rust native parser/validator/type checker/IR compiler are complete.

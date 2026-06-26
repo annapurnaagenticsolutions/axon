@@ -1,7 +1,7 @@
 # AXON — The Programming Language for Autonomous Agents
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Tests](https://img.shields.io/badge/tests-1100%2B%20passing-green)
+![Tests](https://img.shields.io/badge/tests-1200%2B%20passing-green)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Status](https://img.shields.io/badge/status-Alpha-orange)
 
@@ -19,7 +19,9 @@ AXON is the first programming language where **agents, tools, memory, RAG, and o
 
 Write your agents in `.ax` files. Compile to Python MCP servers or TypeScript modules. Deploy to Docker or Fly.io in one command.
 
-> **Status:** Compiler + executing runtime + VS Code extension + debugger + profiler. **Pre-production — sophisticated reference implementation.** Mock providers by default; live provider wiring is Phase 5.
+> **Pair with [AgentOps Mesh](https://github.com/annapurnaagenticsolutions/open-enterprise-agentops-mesh)** — the open-source AgentOps control plane that governs AXON agents through a 9-gate workflow (suitability, risk, data, evaluation, policy, security, audit, approval, readiness). Run both together: `docker compose -f docker-compose.unified.yml up`. See the [unified demo](../DEMO.md).
+
+> **Status:** Compiler + executing runtime + Rust native parser/validator/type checker + distributed mesh runtime + VS Code extension + debugger + profiler. **Pre-production — sophisticated reference implementation.**
 
 ---
 
@@ -62,7 +64,7 @@ axon deploy --target fly
 | **Multi-Target Compilation** | One `.ax` source → Python MCP server or TypeScript module |
 | **RAG Built In** | `rag` declaration with chunking, embedding, and vector search |
 | **Flow Orchestration** | `flow` keyword with DAG scheduling across agents |
-| **Debugger + Profiler** | `axon debug trace.axontrace` — step through execution, inspect memory |
+| **Debugger + Profiler** | `axon debug trace.axontrace` — step through execution, breakpoints, watches, memory inspection, export. `axon profile` — per-tool p50/p95/p99 latency, think timing, hotspot detection, CSV export. `axon replay` — trace replay with regression detection |
 | **Model Router** | Route calls by cost, latency, or quality with one annotation |
 | **Deploy Anywhere** | `axon deploy --target docker` or `--target fly` |
 
@@ -92,7 +94,12 @@ axon profile trace.axontrace
 # → AXON Profile: 4200.5ms overall, 47 events
 # →   ResearchCoordinator: 1800.2ms, 12 events, 3 acts (avg 120.0ms)
 
-# 6. Compile to TypeScript for your frontend
+# 6. Compare traces for regressions
+axon replay baseline.jsonl --compare candidate.jsonl
+# → Trace Comparison: baseline=4200.5ms -> candidate=5100.0ms
+# →   Overall: +899.5ms (+21.4%) REGRESSION
+
+# 7. Compile to TypeScript for your frontend
 axon compile examples/research_pipeline.ax --target ts -o research.ts
 
 # 7. Build production MCP server
@@ -191,6 +198,7 @@ Implemented tooling:
 - dry-run or run generated servers with `axon serve`
 - runtime health check with `axon health`
 - executing agent runtime with `axon run`
+- interactive expression evaluation with `axon repl`
 - agent lifecycle management (spawn, pause, resume, terminate) with `axon agent`
 - agent supervision trees with restart strategies (one-for-one, one-for-all, rest-for-one) with `axon supervisor`
 - hot-reload source watching for agents with `axon watch`
@@ -210,6 +218,8 @@ Implemented tooling:
 - trace replay with exact event matching via `axon replay`
 - runtime checkpoint and restore with `--checkpoint` and `--memory`
 - multi-agent runtime with `delegate`, named agent execution (`--agent`), and in-memory message bus (`send`/`receive`)
+- distributed multi-agent runtime with Redis/NATS message bus (`--mesh redis --mesh-url redis://localhost:6379`), service registry, agent discovery (`discover`), and remote tool dispatch (`remote_call`)
+- Rust native parser, validator, type checker, and IR compiler via PyO3 (`--native` flag); 108 Rust tests passing
 - persistent semantic memory with `remember`, `recall`, `forget` (RFC #009)
 - token budget estimation with `axon token-budget`
 - AgentOps Mesh governance submission with `axon govern` — compile `.ax` into governance JSON and submit to Mesh
@@ -217,6 +227,8 @@ Implemented tooling:
 - plain-English error explanations with `axon explain` — validation diagnostics with fix suggestions
 - package management with `axon add` / `axon remove` — install and remove AXON packages from git repos
 - performance benchmarking with `axon eval` — built-in benchmarks with regression detection
+- runtime observability dashboard with `axon dashboard` — trace summaries, metrics, and live web UI with `--serve`
+- browser-based playground with `axon playground` — parse, validate, and generate code from AXON source in the browser
 
 Implemented safety foundations:
 
@@ -347,6 +359,36 @@ Stream provider responses in real time:
 ```bash
 axon run examples/hello.ax --arg q=hello --stream --mock
 axon agent spawn examples/hello.ax --name bot-1 --arg q=hello --stream --mock
+```
+
+Run with the Rust native parser (requires `axon_parser` PyO3 module built from `axon-parser/`):
+
+```bash
+axon run examples/hello.ax --arg q=world --native
+```
+
+The `--native` flag uses the Rust `axon-parser` crate for parsing, validation, and type checking via PyO3. If the Rust module is not installed, it falls back to the Python parser automatically.
+
+Run agents in distributed mode with Redis mesh:
+
+```bash
+# Start Redis (via WSL2, Docker, or Memurai on Windows)
+# docker run -d -p 6379:6379 redis
+
+# Run agent A registered in the service registry
+axon run examples/hello.ax --mesh redis --mesh-url redis://localhost:6379 --arg q=world
+
+# In another process, run agent B that can discover and call agent A
+axon run examples/debate.ax --mesh redis --mesh-url redis://localhost:6379
+```
+
+The `--mesh` flag enables cross-process agent communication via Redis (or NATS). Agents self-register in the service registry, discover each other with `discover()`, and dispatch remote tool calls with `remote_call(agent_name, tool_name, **kwargs)`.
+
+Launch an interactive REPL session:
+
+```bash
+axon repl
+axon repl examples/hello.ax --live --provider groq
 ```
 
 Start the AXON REST API server:
@@ -1007,6 +1049,8 @@ tool WebSearch(query: Str, max_results: Int = 5) -> Result<List<Any>, ToolError>
 
 Tool docstrings are required by validation because they become tool descriptions for generated MCP metadata.
 
+Built-in tool clients available in tool bodies: `fs` (read, write, list, exists), `http` (get, post, put, delete), `db` (query, execute, transaction, tables, schema), `github` (list_issues, get_issue, create_issue, add_label, assign_issue, close_issue, create_comment, list_prs, get_pr, merge_pr, create_review), `slack` (send_message, update_message, delete_message, list_channels, get_channel_history, create_channel, archive_channel, set_topic, invite_user, search_messages), `sandbox` (run, eval — restricted Python execution with blocked dangerous modules and timeout), and `env` (environment variable access). All paths are sandboxed to the source file's directory. GitHub calls use `GITHUB_TOKEN` and Slack calls use `SLACK_BOT_TOKEN` from the environment.
+
 ### Agent declarations
 
 ```axon
@@ -1112,17 +1156,8 @@ See `docs/RUNTIME_BOUNDARY.md` for the current non-executing compiler/runtime bo
 
 Not yet implemented:
 
-- full type checker
-- token-budget estimator
-- AXON expression translation
-- provider runtime execution
-- AXON runtime interpreter
-- real tool dispatch
-- memory runtime
-- RAG indexing or vector retrieval
-- flow execution engine
-- deterministic trace replay
-- LSP / IDE integration
+- LSP / IDE integration (basic diagnostics available; full autocomplete pending)
+- Multi-agent distributed mesh networking (message bus primitives exist, production hardening pending)
 
 ## Development direction
 

@@ -43,6 +43,9 @@ dev = [
 providers = [
     "openai>=1.0"
 ]
+groq = [
+    "openai>=1.0"
+]
 db = [
     "psycopg[binary]>=3.0"
 ]

@@ -16,6 +16,8 @@ from axon.expression_ast import (
     SomeExpr,
     NoneExpr,
     StringInterpolationExpr,
+    ParExpr,
+    StructuredOutputExpr,
 )
 
 
@@ -208,3 +210,40 @@ def test_parse_empty_string():
     expr = parse_expression("")
     assert isinstance(expr, LiteralExpr)
     assert expr.value is None
+
+
+def test_parse_par():
+    expr = parse_expression("par { 1 + 2, 3 + 4 }")
+    assert isinstance(expr, ParExpr)
+    assert len(expr.expressions) == 2
+
+
+def test_parse_par_empty():
+    expr = parse_expression("par { }")
+    assert isinstance(expr, ParExpr)
+    assert len(expr.expressions) == 0
+
+
+def test_parse_par_single():
+    expr = parse_expression("par { 42 }")
+    assert isinstance(expr, ParExpr)
+    assert len(expr.expressions) == 1
+
+
+def test_parse_think_as():
+    expr = parse_expression('think_as(Str, "Summarize this")')
+    assert isinstance(expr, StructuredOutputExpr)
+    assert expr.type_str == "Str"
+
+
+def test_parse_think_as_record():
+    expr = parse_expression('think_as({ name: Str, age: Int }, "Extract person")')
+    assert isinstance(expr, StructuredOutputExpr)
+    assert "name" in expr.type_str
+    assert "age" in expr.type_str
+
+
+def test_parse_think_as_list():
+    expr = parse_expression('think_as(List<Str>, "Generate tags")')
+    assert isinstance(expr, StructuredOutputExpr)
+    assert "List" in expr.type_str

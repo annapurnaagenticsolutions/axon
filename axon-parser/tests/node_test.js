@@ -1,4 +1,4 @@
-const { parse_axon, parse_expr } = require('../pkg/node/axon_parser');
+const { parse_axon, parse_expr, evaluate_expr, validate_axon, compile_axon } = require('../pkg/node/axon_parser');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg || 'Assertion failed');
@@ -75,7 +75,7 @@ function test_expr_binary_op() {
 }
 
 function test_expr_if() {
-  const json = parse_expr('if ready { go() } else { wait() }');
+  const json = parse_expr('if ready { run() } else { wait() }');
   const ast = JSON.parse(json);
   assert(ast.kind === 'if', 'expected if');
   assert(ast.then_branch.kind === 'block', 'then should be block');
@@ -104,6 +104,80 @@ function test_expr_error() {
   console.log('✓ test_expr_error');
 }
 
+function test_eval_literal() {
+  const astJson = parse_expr('42');
+  const result = evaluate_expr(astJson, '{}', 100);
+  assert(result === '42', 'expected 42, got ' + result);
+  console.log('✓ test_eval_literal');
+}
+
+function test_eval_binary_op() {
+  const astJson = parse_expr('1 + 2 * 3');
+  const result = evaluate_expr(astJson, '{}', 100);
+  assert(result === '7', 'expected 7, got ' + result);
+  console.log('✓ test_eval_binary_op');
+}
+
+function test_eval_variable() {
+  const astJson = parse_expr('x + 10');
+  const result = evaluate_expr(astJson, '{"x": 5}', 100);
+  assert(result === '15', 'expected 15, got ' + result);
+  console.log('✓ test_eval_variable');
+}
+
+function test_eval_if() {
+  const astJson = parse_expr('if x > 5 { "big" } else { "small" }');
+  let result = evaluate_expr(astJson, '{"x": 10}', 100);
+  assert(JSON.parse(result) === 'big', 'expected "big", got ' + result);
+  result = evaluate_expr(astJson, '{"x": 3}', 100);
+  assert(JSON.parse(result) === 'small', 'expected "small", got ' + result);
+  console.log('✓ test_eval_if');
+}
+
+function test_eval_for_loop() {
+  const astJson = parse_expr('for x in [1, 2, 3] { x * 2 }');
+  const result = evaluate_expr(astJson, '{}', 100);
+  // For loop returns last body value, not array
+  assert(result === '6', 'expected 6, got ' + result);
+  console.log('✓ test_eval_for_loop');
+}
+
+function test_eval_while_loop() {
+  // while 1 { break } => null (1 is truthy, break exits immediately)
+  const astJson = parse_expr('while 1 { break }');
+  const result = evaluate_expr(astJson, '{}', 100);
+  assert(result === 'null', 'expected null, got ' + result);
+  console.log('✓ test_eval_while_loop');
+}
+
+function test_validate() {
+  const src = 'agent Bot {\n    model: @mock/gpt\n    fn run(q: Str) -> Str { q }\n}';
+  const json = validate_axon(src);
+  const diags = JSON.parse(json);
+  assert(Array.isArray(diags), 'expected array of diagnostics');
+  console.log('✓ test_validate');
+}
+
+function test_compile() {
+  const src = 'agent Bot {\n    model: @mock/gpt\n    fn run(q: Str) -> Str { q }\n}';
+  const json = compile_axon(src);
+  const ir = JSON.parse(json);
+  assert(ir.version === '0.2.0', 'version mismatch');
+  assert(ir.agents.length === 1, 'expected 1 agent');
+  console.log('✓ test_compile');
+}
+
+function test_compile_error() {
+  try {
+    compile_axon('not valid axon');
+    assert(false, 'expected compile error');
+  } catch (e) {
+    const msg = typeof e === 'string' ? e : (e.message || String(e));
+    assert(msg.length > 0, 'expected non-empty error');
+  }
+  console.log('✓ test_compile_error');
+}
+
 function main() {
   test_basic_agent();
   test_tool_and_agent();
@@ -113,6 +187,15 @@ function main() {
   test_expr_if();
   test_expr_call();
   test_expr_error();
+  test_eval_literal();
+  test_eval_binary_op();
+  test_eval_variable();
+  test_eval_if();
+  test_eval_for_loop();
+  test_eval_while_loop();
+  test_validate();
+  test_compile();
+  test_compile_error();
   console.log('\nAll Node.js WASM tests passed!');
 }
 

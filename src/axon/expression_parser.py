@@ -41,6 +41,8 @@ from axon.expression_ast import (
     ActExpr,
     ModelCallExpr,
     DelegateExpr,
+    ParExpr,
+    StructuredOutputExpr,
 )
 
 
@@ -327,6 +329,8 @@ class ExpressionParser:
                 pass  # fall through to variable parsing
             else:
                 return self.parse_store()
+        if self.current_char == 't' and self._match_keyword("think_as"):
+            return self.parse_think_as()
         if self.current_char == 't' and self._match_keyword("think"):
             return self.parse_think()
         if self.current_char == 'o' and self._match_keyword("observe"):
@@ -335,6 +339,8 @@ class ExpressionParser:
             return self.parse_if()
         if self.current_char == 'f' and self._match_keyword("for"):
             return self.parse_for()
+        if self.current_char == 'p' and self._match_keyword("par"):
+            return self.parse_par()
         if self.current_char == 'm' and self._match_keyword("match"):
             return self.parse_match()
         if self.current_char == 'l' and self._match_keyword("let"):
@@ -694,6 +700,86 @@ class ExpressionParser:
             self.advance()
         
         return BlockExpr(line=self.line_offset, statements=statements)
+
+    def parse_par(self) -> ParExpr:
+        """Parse parallel dispatch: par { expr1, expr2, ... }."""
+        self.pos += 3  # consume "par"
+        self.current_char = self.source[self.pos] if self.pos < len(self.source) else None
+        self.skip_whitespace()
+
+        if self.current_char != '{':
+            return ParExpr(line=self.line_offset, expressions=[])
+
+        self.advance()  # consume {
+        expressions = []
+
+        self.skip_whitespace()
+        while self.current_char and self.current_char != '}':
+            if self.current_char == ',':
+                self.advance()
+                self.skip_whitespace()
+                continue
+
+            expr = self.parse_expression()
+            expressions.append(expr)
+            self.skip_whitespace()
+
+        if self.current_char == '}':
+            self.advance()
+
+        return ParExpr(line=self.line_offset, expressions=expressions)
+
+    def parse_think_as(self) -> StructuredOutputExpr:
+        """Parse structured output: think_as(Type, prompt_expr)."""
+        self.pos += 8  # consume "think_as"
+        self.current_char = self.source[self.pos] if self.pos < len(self.source) else None
+        self.skip_whitespace()
+
+        if self.current_char != '(':
+            return StructuredOutputExpr(line=self.line_offset, type_str="Any", prompt=LiteralExpr(line=self.line_offset, value=None))
+
+        self.advance()  # consume (
+        self.skip_whitespace()
+
+        # Parse type identifier (may include <>, {}, nested commas)
+        type_start = self.pos
+        if self.current_char == '{':
+            # Record type: { field: Type, ... } — track brace depth
+            brace_depth = 0
+            while self.current_char:
+                if self.current_char == '{':
+                    brace_depth += 1
+                elif self.current_char == '}':
+                    brace_depth -= 1
+                    if brace_depth == 0:
+                        self.advance()
+                        break
+                self.advance()
+        else:
+            # Simple or generic type: Str, List<Int>, Option<Str>, etc.
+            angle_depth = 0
+            while self.current_char:
+                if self.current_char == '<':
+                    angle_depth += 1
+                elif self.current_char == '>':
+                    angle_depth -= 1
+                elif self.current_char == ',' and angle_depth == 0:
+                    break
+                self.advance()
+        type_str = self.source[type_start:self.pos].strip()
+
+        if self.current_char == ',':
+            self.advance()
+            self.skip_whitespace()
+
+        # Parse prompt expression
+        prompt = self.parse_expression()
+        self.skip_whitespace()
+
+        if self.current_char == ')':
+            self.advance()
+
+        return StructuredOutputExpr(line=self.line_offset, type_str=type_str, prompt=prompt)
 
     def parse_if(self) -> IfExpr:
         """Parse if expression: if cond { then } else { else }."""

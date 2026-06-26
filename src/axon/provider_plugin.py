@@ -86,6 +86,7 @@ class ProviderPlugin(ABC):
         max_tokens: int,
         temperature: float = 0.7,
         stream: bool = False,
+        response_format: Optional[str] = None,
     ) -> Result[str, ProviderError]:
         """Invoke the provider with a prompt.
         
@@ -95,6 +96,7 @@ class ProviderPlugin(ABC):
             max_tokens: Maximum tokens to generate
             temperature: Sampling temperature (0.0 to 1.0)
             stream: Whether to stream the response (not supported in call())
+            response_format: Optional AXON type string for structured output (JSON mode)
         
         Returns:
             Result with the response text or a ProviderError

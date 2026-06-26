@@ -445,6 +445,11 @@ def run_file(
     metrics_output: bool = False,
     strict_types: bool = False,
     via_ir: bool = False,
+    native: bool = False,
+    mesh_backend: str | None = None,
+    mesh_url: str | None = None,
+    cache_enabled: bool = True,
+    cache_dir: str | Path | None = None,
 ) -> tuple[int, str]:
     """Run one AXON source file and return (exit_code, output)."""
     from axon.config import load_config
@@ -486,6 +491,14 @@ def run_file(
         sandbox_denied_tools=effective_denied,
         strict_types=strict_types,
         via_ir=via_ir,
+        native=native,
+        mesh_backend=mesh_backend,
+        mesh_url=mesh_url,
+        cache_enabled=cache_enabled,
+        cache_dir=Path(cache_dir) if cache_dir else None,
+        granted_permissions=set(getattr(args, "granted_permissions", []) or []),
+        otel_endpoint=getattr(args, "otel_endpoint", None),
+        structured_log=getattr(args, "structured_log", False),
     )
 
     executor = RuntimeExecutor(config)
@@ -509,6 +522,187 @@ def run_file(
         return 0, f'{{"output": "{output}"}}'
 
     return 0, output
+
+
+def _run_repl(
+    source: str | None = None,
+    mock: bool = True,
+    provider_name: str | None = None,
+) -> int:
+    """Interactive AXON REPL — evaluate expressions with optional .ax context."""
+    from axon.parser import parse
+    from axon.expression_parser import ExpressionParser
+    from axon.evaluator import Scope, evaluate
+    from axon.tool_registry import MockToolRegistry
+    from axon.http_client import http_builtins
+    from axon.fs_client import fs_builtins
+    from axon.db_client import db_builtins
+    from axon.github_client import github_builtins
+    from axon.slack_client import slack_builtins
+    from axon.sandbox_client import sandbox_builtins
+    from axon.memory_store import MemoryStore
+    from axon.provider_registry import register_provider
+    from axon.providers import GroqProvider, MockProviderPlugin, OpenAIProvider, AnthropicProvider
+    from axon.trace_emitter import TraceEmitter
+
+    # Register providers
+    for p in [OpenAIProvider(), AnthropicProvider(), GroqProvider(), MockProviderPlugin()]:
+        try:
+            register_provider(p)
+        except Exception:
+            pass
+
+    # Build scope with builtins
+    scope = Scope()
+    builtins = http_builtins()
+    base_dir = Path(source).parent if source else Path.cwd()
+    builtins.update(fs_builtins(base_dir=base_dir))
+    builtins.update(db_builtins(base_dir=base_dir))
+    builtins.update(github_builtins())
+    builtins.update(slack_builtins())
+    builtins.update(sandbox_builtins())
+    for name, value in builtins.items():
+        scope.set(name, value)
+
+    # Memory store
+    memory_store = MemoryStore()
+    scope.set("memory", memory_store)
+
+    # Load tools from source file if provided
+    registry = MockToolRegistry(max_depth=100, builtins=builtins)
+    if source:
+        src_path = Path(source)
+        if src_path.exists():
+            declarations = parse(src_path.read_text(encoding="utf-8"), parse_expressions=True)
+            registry.register_all(declarations)
+            tool_names = registry.list_tools()
+            if tool_names:
+                print(f"Loaded {len(tool_names)} tools: {', '.join(tool_names)}")
+        else:
+            print(f"Warning: file not found: {source}")
+
+    # Provider setup
+    provider = None
+    model_name = "@mock/gpt"
+    if not mock:
+        if provider_name == "groq":
+            from axon.provider_registry import resolve_provider_reference
+            model_name = "@groq/llama-3.3-70b-versatile"
+        elif provider_name == "openai":
+            model_name = "@openai/gpt-4o"
+        elif provider_name == "anthropic":
+            model_name = "@anthropic/claude-3-haiku-20240307"
+        else:
+            model_name = "@mock/gpt"
+        from axon.provider_registry import resolve_provider_reference
+        res = resolve_provider_reference(model_name)
+        if isinstance(res, Ok):
+            provider = res.ok_value
+        else:
+            print(f"Warning: could not resolve provider for {model_name}. Using mock.")
+            model_name = "@mock/gpt"
+            res2 = resolve_provider_reference(model_name)
+            if isinstance(res2, Ok):
+                provider = res2.ok_value
+
+    # Model call function
+    def _model_call(prompt: str):
+        if provider is None:
+            return Ok(f"[mock] {prompt[:50]}")
+        model_id = model_name.split("/", 1)[1] if "/" in model_name else model_name
+        return provider.call(prompt=prompt, model=model_id, max_tokens=1024)
+
+    scope.set("model_call", _model_call)
+
+    # Tool dispatch
+    from axon.evaluator import KwargsDispatchFn
+
+    def _tool_dispatch(name: str, kwargs: dict[str, Any]):
+        res = registry.dispatch(name, kwargs)
+        if isinstance(res, Err):
+            return Err(f"Tool dispatch failed: {res.err_value}")
+        return Ok(res.ok_value)
+
+    print("AXON REPL v0.1.0  —  type :help for commands, :quit to exit")
+    print()
+
+    while True:
+        try:
+            line = input("axon> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+
+        if not line:
+            continue
+        if line in (":quit", ":q", ":exit"):
+            break
+        if line == ":help":
+            print("Commands:")
+            print("  :help          show this help")
+            print("  :quit          exit the REPL")
+            print("  :tools         list loaded tools")
+            print("  :memory        show memory contents")
+            print("  :scope         show scope variables")
+            print("  :load <file>   load tools from a .ax file")
+            print()
+            print("Expressions:")
+            print("  \"Hello, {name}!\"              string interpolation")
+            print("  1 + 2                          arithmetic")
+            print("  let x = 42                     variable binding")
+            print("  act ToolName(arg: value)       tool dispatch")
+            print("  model.complete(\"prompt\")       LLM call")
+            continue
+        if line == ":tools":
+            tools = registry.list_tools()
+            print(f"Tools ({len(tools)}): {', '.join(tools) if tools else '(none)'}")
+            continue
+        if line == ":memory":
+            snap = memory_store.snapshot()
+            if not snap:
+                print("(memory empty)")
+            else:
+                for section, items in snap.items():
+                    print(f"  {section}: {items}")
+            continue
+        if line == ":scope":
+            # Show non-builtin scope variables
+            print("  (scope inspection not available in this version)")
+            continue
+        if line.startswith(":load "):
+            filepath = line[6:].strip()
+            try:
+                decls = parse(Path(filepath).read_text(encoding="utf-8"), parse_expressions=True)
+                registry.register_all(decls)
+                print(f"Loaded {len(registry.list_tools())} tools from {filepath}")
+            except Exception as e:
+                print(f"Error loading {filepath}: {e}")
+            continue
+
+        # Evaluate as AXON expression
+        try:
+            parser = ExpressionParser(line)
+            expr = parser.parse()
+            result = evaluate(
+                expr, scope,
+                kwargs_dispatch_fn=_tool_dispatch,
+                memory_store=memory_store,
+                model_call_fn=_model_call,
+            )
+            if isinstance(result, Err):
+                print(f"Error: {result.err_value}")
+            else:
+                val = result.ok_value
+                if val is None:
+                    print("None")
+                elif isinstance(val, str):
+                    print(f'"{val}"')
+                else:
+                    print(val)
+        except Exception as e:
+            print(f"Parse error: {e}")
+
+    return 0
 
 
 def run_file_stream(
@@ -1130,6 +1324,34 @@ def main(argv: Sequence[str] | None = None) -> int:
                     print(ts_code)
                 return 0
 
+            if target == "go":
+                from axon.codegen.go import generate_go
+                from axon.parser import parse
+                declarations = parse(source_path.read_text(encoding="utf-8"))
+                go_code = generate_go(declarations, output_name=source_path.stem)
+
+                if getattr(args, "output", None):
+                    out_path = Path(args.output)
+                    out_path.write_text(go_code, encoding="utf-8")
+                    print(f"Go written to {out_path}")
+                else:
+                    print(go_code)
+                return 0
+
+            if target == "rust":
+                from axon.codegen.rust import generate_rust
+                from axon.parser import parse
+                declarations = parse(source_path.read_text(encoding="utf-8"))
+                rust_code = generate_rust(declarations, output_name=source_path.stem)
+
+                if getattr(args, "output", None):
+                    out_path = Path(args.output)
+                    out_path.write_text(rust_code, encoding="utf-8")
+                    print(f"Rust written to {out_path}")
+                else:
+                    print(rust_code)
+                return 0
+
             if target == "governance":
                 from axon.codegen.governance import generate_governance_submission
                 from axon.parser import parse
@@ -1318,9 +1540,32 @@ def main(argv: Sequence[str] | None = None) -> int:
                     metrics_output=getattr(args, "metrics", False),
                     strict_types=getattr(args, "strict_types", False),
                     via_ir=getattr(args, "via_ir", False),
+                    native=getattr(args, "native", False),
+                    mesh_backend=getattr(args, "mesh_backend", None),
+                    mesh_url=getattr(args, "mesh_url", None),
+                    cache_enabled=getattr(args, "cache_enabled", True),
+                    cache_dir=getattr(args, "cache_dir", None),
                 )
             print(output)
             return code
+
+        if args.command == "playground":
+            from axon.playground_server import main as playground_main
+            import sys as _sys
+            # Override sys.argv for the playground server's argparse
+            old_argv = _sys.argv
+            _sys.argv = ["playground", "--host", args.host, "--port", str(args.port)]
+            try:
+                return playground_main()
+            finally:
+                _sys.argv = old_argv
+
+        if args.command == "repl":
+            return _run_repl(
+                source=getattr(args, "source", None),
+                mock=getattr(args, "mock", True),
+                provider_name=getattr(args, "provider_name", None),
+            )
 
         if args.command == "serve":
             return serve_file(
@@ -1605,6 +1850,78 @@ def main(argv: Sequence[str] | None = None) -> int:
 
             raise AxonCLIError(f"Unknown metrics subcommand: {sub}")
 
+        if args.command == "dashboard":
+            if args.serve is not None:
+                from axon.dashboard import serve_dashboard
+                server = serve_dashboard(port=args.serve)
+                print("Press Ctrl+C to stop.")
+                try:
+                    import time as _time
+                    while True:
+                        _time.sleep(1)
+                except KeyboardInterrupt:
+                    server.stop()
+                    print("\nDashboard stopped.")
+                return 0
+
+            dashboard_data: dict[str, Any] = {}
+
+            if args.trace:
+                from axon.trace_reader import read_trace_file
+                from axon.profiler import Profiler
+                trace_log = read_trace_file(Path(args.trace))
+                profiler = Profiler(trace_log)
+                report = profiler.analyze()
+                dashboard_data["trace"] = {
+                    "file": args.trace,
+                    "total_events": report.total_events,
+                    "total_ms": round(report.total_ms, 3),
+                    "tool_count": len(report.tool_stats),
+                    "agent_count": len(report.agent_stats),
+                    "tools": [
+                        {"name": t.tool, "calls": t.count, "avg_ms": round(t.avg_ms, 3)}
+                        for t in report.tool_stats
+                    ],
+                    "agents": [
+                        {"name": a.agent, "events": a.event_count, "total_ms": round(a.total_ms, 3)}
+                        for a in report.agent_stats
+                    ],
+                }
+
+            if args.metrics:
+                from axon.metrics import get_metrics_collector
+                collector = get_metrics_collector()
+                dashboard_data["metrics"] = collector.to_dict()
+
+            if args.json:
+                print(json.dumps(dashboard_data, indent=2))
+            else:
+                if "trace" in dashboard_data:
+                    t = dashboard_data["trace"]
+                    print(f"AXON Trace Dashboard: {t['file']}")
+                    print(f"  Events: {t['total_events']}")
+                    print(f"  Duration: {t['total_ms']}ms")
+                    print(f"  Tools: {t['tool_count']}")
+                    for tool in t["tools"]:
+                        print(f"    {tool['name']}: {tool['calls']} calls, {tool['avg_ms']}ms avg")
+                    print(f"  Agents: {t['agent_count']}")
+                    for agent in t["agents"]:
+                        print(f"    {agent['name']}: {agent['events']} events, {agent['total_ms']}ms")
+                if "metrics" in dashboard_data:
+                    m = dashboard_data["metrics"]
+                    print(f"\nAXON Metrics:")
+                    if m["counters"]:
+                        print("  Counters:")
+                        for k, v in sorted(m["counters"].items()):
+                            print(f"    {k}: {v}")
+                    if m["provider_calls"]:
+                        print(f"  Provider calls: {len(m['provider_calls'])}")
+                    if m["tool_dispatches"]:
+                        print(f"  Tool dispatches: {len(m['tool_dispatches'])}")
+                if not dashboard_data:
+                    print("AXON Dashboard: no data. Use --trace or --metrics.")
+            return 0
+
         if args.command == "secret":
             from axon.secret_manager import FileSecretManager, get_default_secret_manager
 
@@ -1661,6 +1978,64 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise AxonCLIError(f"Unknown secret subcommand: {sub}")
 
         if args.command == "eval":
+            if args.compare_versions:
+                from axon.parser import parse
+                file_a, file_b = args.compare_versions
+                source_a = Path(file_a).read_text(encoding="utf-8")
+                source_b = Path(file_b).read_text(encoding="utf-8")
+                decls_a = parse(source_a)
+                decls_b = parse(source_b)
+                agents_a = {d.name: d for d in decls_a if hasattr(d, "version")}
+                agents_b = {d.name: d for d in decls_b if hasattr(d, "version")}
+
+                comparisons = []
+                all_names = sorted(set(agents_a) | set(agents_b))
+                for name in all_names:
+                    a = agents_a.get(name)
+                    b = agents_b.get(name)
+                    if a and b:
+                        comparisons.append({
+                            "agent": name,
+                            "version_a": a.version,
+                            "version_b": b.version,
+                            "changed": a.version != b.version,
+                            "methods_a": [m.name for m in a.methods],
+                            "methods_b": [m.name for m in b.methods],
+                            "tools_a": a.tools,
+                            "tools_b": b.tools,
+                        })
+                    elif a:
+                        comparisons.append({
+                            "agent": name,
+                            "version_a": a.version,
+                            "version_b": None,
+                            "changed": True,
+                            "status": "removed_in_b",
+                        })
+                    else:
+                        comparisons.append({
+                            "agent": name,
+                            "version_a": None,
+                            "version_b": b.version,
+                            "changed": True,
+                            "status": "new_in_b",
+                        })
+
+                if args.json:
+                    print(json.dumps({"comparisons": comparisons}, indent=2))
+                else:
+                    print("AXON version comparison:")
+                    for c in comparisons:
+                        if c.get("status") == "removed_in_b":
+                            print(f"  - {c['agent']}: v{c['version_a']} -> REMOVED")
+                        elif c.get("status") == "new_in_b":
+                            print(f"  + {c['agent']}: NEW -> v{c['version_b']}")
+                        elif c["changed"]:
+                            print(f"  ~ {c['agent']}: v{c['version_a']} -> v{c['version_b']}")
+                        else:
+                            print(f"  = {c['agent']}: v{c['version_a']} (unchanged)")
+                return 0
+
             from axon.eval_harness import EvalHarness
             harness = EvalHarness(
                 iterations=args.iterations,
@@ -1758,21 +2133,100 @@ def main(argv: Sequence[str] | None = None) -> int:
             trace_path = Path(args.trace)
             if not trace_path.exists():
                 raise AxonCLIError(f"Trace file not found: {args.trace}")
-            report = profile_trace(trace_path)
+            report = profile_trace(
+                trace_path,
+                hotspot_threshold_ms=args.hotspot_threshold,
+                max_hotspots=args.max_hotspots,
+            )
             if args.json:
                 import json
                 print(json.dumps(report.to_dict(), indent=2))
+            elif args.csv:
+                print(report.to_csv(), end="")
+            elif args.tool_csv:
+                print(report.to_tool_csv(), end="")
             else:
                 print(f"AXON Profile: {report.overall_ms:.1f}ms overall, {report.total_events} events")
                 for name, p in report.agents.items():
                     act_avg = p.act_total_ms / p.act_calls if p.act_calls else 0
                     print(f"  {name}: {p.total_ms:.1f}ms, {p.event_count} events, {p.act_calls} acts (avg {act_avg:.1f}ms)")
-                    if p.think_tokens:
-                        print(f"    think tokens: {p.think_tokens}")
+                    if p.think_count:
+                        print(f"    think: {p.think_count} events, {p.think_total_ms:.1f}ms, {p.think_tokens} tokens")
                     if p.method_breakdown:
                         for method, ms in p.method_breakdown.items():
                             print(f"    method '{method}': {ms:.1f}ms")
+                if report.tools:
+                    print(f"\n  Tools ({len(report.tools)}):")
+                    for name, tp in sorted(report.tools.items(), key=lambda kv: kv[1].total_ms, reverse=True):
+                        print(f"    {name}: {tp.call_count} calls, {tp.total_ms:.1f}ms total (avg {tp.avg_ms:.1f}ms, p50 {tp.p50_ms:.1f}ms, p95 {tp.p95_ms:.1f}ms, p99 {tp.p99_ms:.1f}ms)")
+                if report.think.count:
+                    print(f"\n  Think: {report.think.count} events, {report.think.total_ms:.1f}ms (avg {report.think.avg_ms:.1f}ms, p50 {report.think.p50_ms:.1f}ms, p95 {report.think.p95_ms:.1f}ms)")
+                    if report.think.total_tokens:
+                        print(f"    tokens: {report.think.total_tokens} ({report.think.tokens_per_sec:.1f} tokens/sec)")
+                if report.hotspots:
+                    print(f"\n  Hotspots ({len(report.hotspots)}):")
+                    for h in report.hotspots:
+                        tool_str = f" tool={h.tool}" if h.tool else ""
+                        print(f"    [{h.index}] {h.event_type} agent={h.agent}{tool_str} {h.latency_ms:.1f}ms — {h.description}")
             return 0
+
+        if args.command == "replay":
+            from axon.trace_replay import replay_trace, compare_trace_files
+            if args.compare:
+                baseline_path = Path(args.trace)
+                candidate_path = Path(args.compare)
+                if not baseline_path.exists():
+                    raise AxonCLIError(f"Baseline trace not found: {args.trace}")
+                if not candidate_path.exists():
+                    raise AxonCLIError(f"Candidate trace not found: {args.compare}")
+                report = compare_trace_files(
+                    baseline_path,
+                    candidate_path,
+                    regression_threshold_pct=args.threshold,
+                )
+                if args.json:
+                    import json
+                    print(json.dumps(report.to_dict(), indent=2))
+                else:
+                    print(f"Trace Comparison: baseline={report.baseline_total_ms:.1f}ms -> candidate={report.candidate_total_ms:.1f}ms")
+                    delta_str = f"+{report.overall_delta_ms:.1f}ms" if report.overall_delta_ms >= 0 else f"{report.overall_delta_ms:.1f}ms"
+                    print(f"  Overall: {delta_str} ({report.overall_delta_pct:+.1f}%) {'REGRESSION' if report.overall_regressed else 'ok'}")
+                    print(f"  Events: {report.baseline_events} -> {report.candidate_events} ({report.event_delta:+d})")
+                    if report.new_tools:
+                        print(f"  New tools: {', '.join(report.new_tools)}")
+                    if report.removed_tools:
+                        print(f"  Removed tools: {', '.join(report.removed_tools)}")
+                    if report.new_agents:
+                        print(f"  New agents: {', '.join(report.new_agents)}")
+                    if report.removed_agents:
+                        print(f"  Removed agents: {', '.join(report.removed_agents)}")
+                    regressed_tools = [t for t in report.tool_regressions if t.regressed]
+                    if regressed_tools:
+                        print(f"\n  Tool regressions ({len(regressed_tools)}):")
+                        for t in regressed_tools:
+                            print(f"    {t.tool}: {t.baseline_avg_ms:.1f}ms -> {t.candidate_avg_ms:.1f}ms ({t.delta_pct:+.1f}%) p95 {t.baseline_p95_ms:.1f}ms -> {t.candidate_p95_ms:.1f}ms")
+                    regressed_agents = [a for a in report.agent_regressions if a.regressed]
+                    if regressed_agents:
+                        print(f"\n  Agent regressions ({len(regressed_agents)}):")
+                        for a in regressed_agents:
+                            print(f"    {a.agent}: {a.baseline_total_ms:.1f}ms -> {a.candidate_total_ms:.1f}ms ({a.delta_pct:+.1f}%)")
+                    if not regressed_tools and not regressed_agents and not report.overall_regressed:
+                        print("  No regressions detected.")
+                return 0
+            else:
+                trace_path = Path(args.trace)
+                if not trace_path.exists():
+                    raise AxonCLIError(f"Trace file not found: {args.trace}")
+                result = replay_trace(trace_path)
+                if args.json:
+                    import json
+                    print(json.dumps(result.to_dict(), indent=2))
+                else:
+                    print(f"Trace Replay: {result.total_ms:.1f}ms, {result.total_events} events")
+                    for step in result.steps:
+                        tool_str = f" tool={step.tool}" if step.tool else ""
+                        print(f"  [{step.index:3d}] {step.event_type:7s} agent={step.agent}{tool_str} {step.latency_ms:7.1f}ms (cum {step.cumulative_ms:8.1f}ms) — {step.description}")
+                return 0
 
         parser.print_help()
         return 2
@@ -2639,9 +3093,9 @@ def _make_arg_parser() -> argparse.ArgumentParser:
     compile_cmd.add_argument("source", help="path to the input .ax file")
     compile_cmd.add_argument(
         "--target",
-        choices=["ir", "ts", "typescript", "governance"],
+        choices=["ir", "ts", "typescript", "go", "rust", "governance"],
         default="ir",
-        help="compilation target: ir (default), ts, typescript, governance (AgentOps Mesh)",
+        help="compilation target: ir (default), ts, typescript, go, rust, governance (AgentOps Mesh)",
     )
     compile_cmd.add_argument(
         "--ir",
@@ -2743,7 +3197,7 @@ def _make_arg_parser() -> argparse.ArgumentParser:
         "--provider",
         dest="provider_name",
         default=None,
-        choices=["openai", "anthropic", "mock"],
+        choices=["openai", "anthropic", "groq", "mock"],
         help="override the provider for real provider calls (used with --no-mock)",
     )
     run_cmd.add_argument(
@@ -2804,9 +3258,100 @@ def _make_arg_parser() -> argparse.ArgumentParser:
         help="compile .ax source through IR before execution (proves IR is the contract)",
     )
     run_cmd.add_argument(
+        "--native",
+        action="store_true",
+        help="use the Rust parser (axon_parser PyO3 module) when available, falling back to Python parser",
+    )
+    run_cmd.add_argument(
+        "--mesh",
+        dest="mesh_backend",
+        choices=["redis", "nats"],
+        default=None,
+        help="enable distributed runtime with the specified message bus backend (redis or nats)",
+    )
+    run_cmd.add_argument(
+        "--mesh-url",
+        dest="mesh_url",
+        default=None,
+        help="message bus backend URL (e.g. redis://localhost:6379 or nats://localhost:4222)",
+    )
+    run_cmd.add_argument(
+        "--no-cache",
+        dest="cache_enabled",
+        action="store_false",
+        default=True,
+        help="disable prompt and tool result caching",
+    )
+    run_cmd.add_argument(
+        "--cache-dir",
+        dest="cache_dir",
+        default=None,
+        help="directory for disk-backed cache storage (default: in-memory only)",
+    )
+    run_cmd.add_argument(
         "--json",
         action="store_true",
         help="print output as JSON",
+    )
+    run_cmd.add_argument(
+        "--grant-permission",
+        dest="granted_permissions",
+        action="append",
+        default=[],
+        help="grant a permission scope:access (repeatable, e.g. --grant-permission fs:read)",
+    )
+    run_cmd.add_argument(
+        "--otel-endpoint",
+        dest="otel_endpoint",
+        default=None,
+        help="OTLP/HTTP endpoint for OpenTelemetry trace export",
+    )
+    run_cmd.add_argument(
+        "--structured-log",
+        dest="structured_log",
+        action="store_true",
+        help="emit structured JSON log lines to stderr during execution",
+    )
+
+    # Playground command
+    playground_cmd = subcommands.add_parser(
+        "playground",
+        help="launch the AXON web playground (parse, validate, codegen in browser)",
+    )
+    playground_cmd.add_argument(
+        "--port",
+        type=int,
+        default=8080,
+        help="port to serve the playground on (default: 8080)",
+    )
+    playground_cmd.add_argument(
+        "--host",
+        default="localhost",
+        help="host to bind the playground server (default: localhost)",
+    )
+
+    repl_cmd = subcommands.add_parser(
+        "repl",
+        help="interactive AXON expression evaluator (read-eval-print loop)",
+    )
+    repl_cmd.add_argument(
+        "source",
+        nargs="?",
+        help="optional .ax file to load tools and agents into the REPL scope",
+    )
+    repl_cmd.add_argument(
+        "--live",
+        dest="mock",
+        action="store_false",
+        default=True,
+        help="enable real provider calls (requires API keys)",
+    )
+    repl_cmd.add_argument(
+        "--provider",
+        dest="provider_name",
+        default=None,
+        choices=["openai", "anthropic", "groq", "mock"],
+        help="provider to use with --live (default: from agent model reference)",
     )
 
     agent_cmd = subcommands.add_parser(
@@ -2871,7 +3416,7 @@ def _make_arg_parser() -> argparse.ArgumentParser:
         "--provider",
         dest="provider_name",
         default=None,
-        choices=["openai", "anthropic", "mock"],
+        choices=["openai", "anthropic", "groq", "mock"],
         help="override the provider for real provider calls",
     )
 
@@ -2936,7 +3481,7 @@ def _make_arg_parser() -> argparse.ArgumentParser:
         "--provider",
         dest="provider_name",
         default=None,
-        choices=["openai", "anthropic", "mock"],
+        choices=["openai", "anthropic", "groq", "mock"],
         help="override provider for the restored agent",
     )
 
@@ -3053,7 +3598,7 @@ def _make_arg_parser() -> argparse.ArgumentParser:
         "--provider",
         dest="provider_name",
         default=None,
-        choices=["openai", "anthropic", "mock"],
+        choices=["openai", "anthropic", "groq", "mock"],
         help="override provider for children",
     )
 
@@ -3103,7 +3648,7 @@ def _make_arg_parser() -> argparse.ArgumentParser:
         "--provider",
         dest="provider_name",
         default=None,
-        choices=["openai", "anthropic", "mock"],
+        choices=["openai", "anthropic", "groq", "mock"],
         help="override provider for the agent",
     )
 
@@ -3139,6 +3684,34 @@ def _make_arg_parser() -> argparse.ArgumentParser:
 
     metrics_reset = metrics_sub.add_parser("reset", help="reset the global metrics collector")
 
+    # Dashboard command
+    dashboard_cmd = subcommands.add_parser(
+        "dashboard",
+        help="display AXON runtime observability dashboard",
+    )
+    dashboard_cmd.add_argument(
+        "--trace",
+        help="path to a trace JSONL file to summarize",
+    )
+    dashboard_cmd.add_argument(
+        "--metrics",
+        action="store_true",
+        help="include global metrics collector output",
+    )
+    dashboard_cmd.add_argument(
+        "--json",
+        action="store_true",
+        help="output dashboard as JSON",
+    )
+    dashboard_cmd.add_argument(
+        "--serve",
+        type=int,
+        nargs="?",
+        const=8050,
+        metavar="PORT",
+        help="serve interactive web dashboard on given port (default 8050)",
+    )
+
     # Eval / benchmark command
     eval_cmd = subcommands.add_parser(
         "eval",
@@ -3158,6 +3731,12 @@ def _make_arg_parser() -> argparse.ArgumentParser:
         "--json",
         action="store_true",
         help="output results as JSON",
+    )
+    eval_cmd.add_argument(
+        "--compare-versions",
+        nargs=2,
+        metavar=("FILE_A", "FILE_B"),
+        help="compare agent versions between two .ax files and report differences",
     )
 
     # Secret management command
@@ -3271,6 +3850,54 @@ def _make_arg_parser() -> argparse.ArgumentParser:
         "--json",
         action="store_true",
         help="output profile as JSON",
+    )
+    profile_cmd.add_argument(
+        "--csv",
+        action="store_true",
+        help="export per-event timing data as CSV",
+    )
+    profile_cmd.add_argument(
+        "--tool-csv",
+        dest="tool_csv",
+        action="store_true",
+        help="export per-tool summary as CSV",
+    )
+    profile_cmd.add_argument(
+        "--hotspot-threshold",
+        dest="hotspot_threshold",
+        type=float,
+        default=100.0,
+        help="minimum latency in ms to flag as hotspot (default: 100)",
+    )
+    profile_cmd.add_argument(
+        "--max-hotspots",
+        dest="max_hotspots",
+        type=int,
+        default=10,
+        help="maximum number of hotspots to show (default: 10)",
+    )
+
+    # Replay command
+    replay_cmd = subcommands.add_parser(
+        "replay",
+        help="replay a trace or compare two traces for regression detection",
+    )
+    replay_cmd.add_argument("trace", help="path to a JSONL trace file (baseline if --compare is used)")
+    replay_cmd.add_argument(
+        "--compare",
+        default=None,
+        help="path to a candidate trace file for regression comparison",
+    )
+    replay_cmd.add_argument(
+        "--threshold",
+        type=float,
+        default=10.0,
+        help="regression threshold in percent (default: 10)",
+    )
+    replay_cmd.add_argument(
+        "--json",
+        action="store_true",
+        help="output as JSON",
     )
 
     # CI template command

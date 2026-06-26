@@ -13,7 +13,7 @@ from typing import Any
 
 from axon.ast_nodes import RagDecl
 from axon.rag_chunker import sliding_window_chunks
-from axon.rag_embedder import mock_embed
+from axon.rag_embedder import mock_embed, create_embed_fn
 from axon.vector_store import VectorStore
 
 
@@ -21,6 +21,7 @@ def index_rag(
     rag: RagDecl,
     store: VectorStore,
     source_base: Path | None = None,
+    embed_fn=None,
 ) -> dict[str, Any]:
     """Index a RAG declaration into the given VectorStore.
 
@@ -28,11 +29,17 @@ def index_rag(
         rag: The RagDecl to index.
         store: The VectorStore to populate.
         source_base: Base directory for resolving relative source paths.
+        embed_fn: Optional embed function ``(text: str) -> list[float]``.
+            If not provided, creates one from ``rag.embedder``.
 
     Returns:
         Dict with indexing statistics.
     """
     start_time = time.time()
+
+    # Resolve embed function
+    if embed_fn is None:
+        embed_fn = create_embed_fn(rag.embedder) if rag.embedder else mock_embed
 
     # Parse chunker settings from raw string (simple heuristic)
     chunk_size = 512
@@ -76,7 +83,10 @@ def index_rag(
         )
 
         for chunk_text, metadata in chunks:
-            embedding = mock_embed(chunk_text, dimension=store.dimension)
+            embedding = embed_fn(chunk_text)
+            if len(embedding) != store.dimension:
+                # Dimension mismatch — fall back to mock with correct dimension
+                embedding = mock_embed(chunk_text, dimension=store.dimension)
             meta = dict(metadata)
             meta["source_file"] = file_path
             store.add(chunk_text, embedding, metadata=meta)

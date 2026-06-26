@@ -75,13 +75,8 @@ def test_readme_documents_supported_declarations():
 def test_readme_documents_current_limitations():
     readme = _read("README.md")
     limitations = [
-        "full type checker",
-        "token-budget estimator",
-        "AXON expression translation",
-        "provider runtime execution",
-        "RAG indexing or vector retrieval",
-        "flow execution engine",
         "LSP / IDE integration",
+        "Multi-agent distributed mesh networking",
     ]
 
     for limitation in limitations:
@@ -129,6 +124,8 @@ def test_cli_reference_documents_same_command_surface():
         "axon trace-preview",
         "axon trace-read",
         "axon trace-log",
+        "axon dashboard",
+        "axon playground",
     ]:
         assert command in cli_reference
 

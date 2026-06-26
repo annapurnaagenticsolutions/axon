@@ -6,7 +6,7 @@ the ``anthropic`` package to be installed (``pip install anthropic``).
 
 from __future__ import annotations
 
-from typing import AsyncIterator, Iterator
+from typing import AsyncIterator, Iterator, Optional
 from result import Result, Ok, Err
 
 from axon.provider_plugin import (
@@ -50,6 +50,7 @@ class AnthropicProvider(ProviderPlugin):
         max_tokens: int,
         temperature: float = 0.7,
         stream: bool = False,
+        response_format: Optional[str] = None,
     ) -> Result[str, ProviderError]:
         """Invoke Anthropic messages API."""
         try:
@@ -73,12 +74,21 @@ class AnthropicProvider(ProviderPlugin):
         client = anthropic.Anthropic(api_key=api_key, base_url=config.base_url)
 
         try:
-            response = client.messages.create(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=max_tokens,
-                temperature=temperature,
-            )
+            kwargs = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+            if response_format:
+                # Anthropic uses tool-use for structured output
+                kwargs["tools"] = [{
+                    "name": "structured_output",
+                    "description": "Return structured output",
+                    "input_schema": {"type": "object", "properties": {"result": {"type": "string"}}},
+                }]
+                kwargs["tool_choice"] = {"type": "tool", "name": "structured_output"}
+            response = client.messages.create(**kwargs)
             content = ""
             for block in response.content:
                 if hasattr(block, "text"):

@@ -60,6 +60,7 @@ EXPECTED_COMMANDS = [
     "trace-read",
     "trace-log",
     "run",
+    "repl",
     "agent",
     "supervisor",
     "watch",
@@ -74,6 +75,9 @@ EXPECTED_COMMANDS = [
     "deploy",
     "debug",
     "profile",
+    "replay",
+    "dashboard",
+    "playground",
 ]
 
 EXPECTED_OPTIONS = {
@@ -120,6 +124,7 @@ EXPECTED_OPTIONS = {
     "trace-read": ["--type", "--agent", "--events", "--json", "--jsonl"],
     "trace-log": ["--type", "--agent", "--events", "--json", "--jsonl"],
     "run": ["--arg", "--trace", "--memory", "--checkpoint", "--mock", "--no-mock", "--flow", "--agent", "--replay", "--stream", "--sandbox-timeout", "--sandbox-max-depth", "--sandbox-denied", "--metrics", "--json"],
+    "repl": ["--live", "--provider"],
     "agent": [],
     "supervisor": [],
     "watch": [],
@@ -132,7 +137,10 @@ EXPECTED_OPTIONS = {
     "remove": [],
     "deploy": ["--target", "--image-tag", "--file"],
     "debug": ["--non-interactive"],
-    "profile": ["--json"],
+    "profile": ["--json", "--csv", "--tool-csv", "--hotspot-threshold", "--max-hotspots"],
+    "replay": ["--compare", "--threshold", "--json"],
+    "dashboard": ["--trace", "--metrics", "--json", "--serve"],
+    "playground": ["--host", "--port"],
 }
 
 

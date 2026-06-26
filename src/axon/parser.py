@@ -706,6 +706,7 @@ def parse_agent(source: str, start: int, parse_expressions: bool = False) -> tup
     workers: Optional[str] = None
     methods: list[MethodDecl] = []
     method_annotations: list[Annotation] = []
+    version: str = "0.1.0"
 
     pos = 0
     while pos < len(body_raw):
@@ -753,6 +754,15 @@ def parse_agent(source: str, start: int, parse_expressions: bool = False) -> tup
             workers = value.strip()
             continue
 
+        if _starts_field(body_raw, pos, "version"):
+            if method_annotations:
+                raise SyntaxError(
+                    f"Dangling annotation before version field in agent {name} at line {line_num}"
+                )
+            value, pos = _parse_line_field(body_raw, pos, "version")
+            version = value.strip().strip('"')
+            continue
+
         if _starts_keyword(body_raw, pos, "fn"):
             method, pos = _parse_method(body_raw, pos, method_annotations, parse_expressions=parse_expressions)
             methods.append(method)
@@ -778,6 +788,7 @@ def parse_agent(source: str, start: int, parse_expressions: bool = False) -> tup
             workers=workers,
             annotations=[],
             methods=methods,
+            version=version,
             line=line_num,
         ),
         pos_after,

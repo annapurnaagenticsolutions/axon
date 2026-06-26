@@ -1,0 +1,177 @@
+[
+  {
+    "node": "TypeAliasDecl",
+    "name": "Summary",
+    "type_params": [],
+    "value": "{ url: Str, title: Str, key_points: List<Str>, summary: Str, word_count: Int }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "url",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "title",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "key_points",
+        "type_str": "List<Str>",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "summary",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "word_count",
+        "type_str": "Int",
+        "default": null
+      }
+    ],
+    "line": 13
+  },
+  {
+    "node": "PromptDecl",
+    "name": "SummarizePrompt",
+    "params": [
+      {
+        "node": "Param",
+        "name": "content",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "url",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Summary",
+    "template": "Summarize the following content from {url}.\n\nContent:\n{content}\n\nProvide:\n- title: a concise title for the content\n- key_points: 3-5 bullet points capturing the most important information\n- summary: a 2-3 paragraph summary\n\nReturn as: title | key_points | summary",
+    "annotations": [
+      {
+        "node": "Annotation",
+        "name": "budget",
+        "args": {
+          "tokens": "1500"
+        }
+      }
+    ],
+    "line": 21
+  },
+  {
+    "node": "ToolDecl",
+    "name": "FetchURL",
+    "params": [
+      {
+        "node": "Param",
+        "name": "url",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Str, ToolError>",
+    "docstrings": [
+      "Fetches content from a URL via HTTP GET.",
+      "Returns the raw response body as a string."
+    ],
+    "body": "http.get(url)",
+    "annotations": [],
+    "line": 37,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "SaveSummary",
+    "params": [
+      {
+        "node": "Param",
+        "name": "output_path",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "content",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Bool, ToolError>",
+    "docstrings": [
+      "Saves summary content to a file on disk."
+    ],
+    "body": "fs.write(output_path, content)",
+    "annotations": [],
+    "line": 43,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "WordCount",
+    "params": [
+      {
+        "node": "Param",
+        "name": "text",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Int, ToolError>",
+    "docstrings": [
+      "Counts the number of words in a text string."
+    ],
+    "body": "len(text)",
+    "annotations": [],
+    "line": 48,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "ContentSummarizer",
+    "model": "@groq/llama-3.3-70b-versatile",
+    "tools": [
+      "FetchURL",
+      "SaveSummary",
+      "WordCount"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "ShortTerm",
+      "options": {
+        "capacity": "200"
+      }
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "run",
+        "params": [
+          {
+            "node": "Param",
+            "name": "url",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<Str, AgentError>",
+        "annotations": [],
+        "body": "think f\"Fetching content from: {url}\"\n\nlet content = act FetchURL(url: url)?\nstore memory.working[\"last_url\"] = url\nstore memory.working[\"content_length\"] = len(content)\n\nthink f\"Fetched {len(content)} characters. Generating summary...\"\n\nlet summary_text = model.complete(SummarizePrompt(content, url))\n\nlet words = act WordCount(text: summary_text)?\nthink f\"Summary generated: {words} words\"\n\nlet output_file = \"summary_output.md\"\nact SaveSummary(output_path: output_file, content: summary_text)?\n\nthink f\"Summary saved to {output_file}\"\n\nOk(summary_text)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "version": "0.1.0",
+    "line": 53
+  }
+]

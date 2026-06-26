@@ -57,6 +57,8 @@ from axon.expression_ast import (
     VariableExpr,
     ModelCallExpr,
     DelegateExpr,
+    ParExpr,
+    StructuredOutputExpr,
 )
 from axon.evaluator_errors import EvalError, EvalErrorKind
 from axon.memory_store import MemoryStore
@@ -989,6 +991,83 @@ def evaluate(
                         return Ok(None)
                     return Err(EvalError(kind=EvalErrorKind.INVALID_OPERATION, message=result.err_value, line=expr.line))
             return Err(EvalError(kind=EvalErrorKind.INVALID_OPERATION, message="terminate: no lifecycle manager in scope", line=expr.line))
+
+        if isinstance(expr, StructuredOutputExpr):
+            # Evaluate prompt expression
+            prompt_res = evaluate(expr.prompt, scope, dispatch_fn=dispatch_fn, kwargs_dispatch_fn=kwargs_dispatch_fn, memory_store=memory_store, model_call_fn=model_call_fn, delegate_fn=delegate_fn, trace_fn=trace_fn)
+            if isinstance(prompt_res, Err):
+                return prompt_res
+            prompt = str(prompt_res.ok_value)
+
+            if model_call_fn is None:
+                return Err(
+                    EvalError(
+                        kind=EvalErrorKind.NOT_IMPLEMENTED,
+                        message="No model call function provided for think_as()",
+                        line=expr.line,
+                    )
+                )
+
+            # Call model with structured output hint via a special scope variable
+            # The runtime sets __structured_call_fn__ to support response_format
+            structured_fn = scope.get("__structured_call_fn__") if "__structured_call_fn__" in scope else None
+            if structured_fn is not None:
+                res = structured_fn(prompt, expr.type_str)
+            else:
+                # Fallback: use regular model_call_fn and try to parse JSON
+                res = model_call_fn(prompt)
+
+            if isinstance(res, Err):
+                return res
+
+            # Try to parse the response as JSON
+            import json
+            try:
+                parsed = json.loads(res.ok_value)
+            except (json.JSONDecodeError, TypeError):
+                # If not JSON, return the raw string
+                parsed = res.ok_value
+
+            # Validate against the AXON type
+            from axon.type_checker import validate_runtime_type
+            type_err = validate_runtime_type(parsed, expr.type_str)
+            if type_err:
+                return Err(
+                    EvalError(
+                        kind=EvalErrorKind.TYPE_MISMATCH,
+                        message=f"Structured output validation failed: {type_err}",
+                        line=expr.line,
+                    )
+                )
+
+            if trace_fn is not None:
+                trace_fn("think_as", {"type": expr.type_str, "result_summary": str(parsed)[:100]})
+
+            return Ok(parsed)
+
+        if isinstance(expr, ParExpr):
+            # Evaluate all expressions concurrently using threads
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            if not expr.expressions:
+                return Ok([])
+
+            results: list[Any] = [None] * len(expr.expressions)
+            errors: list[Optional[EvalError]] = [None] * len(expr.expressions)
+
+            def _eval_one(idx: int, e: Expr) -> tuple[int, Result[Any, EvalError]]:
+                res = evaluate(e, scope, dispatch_fn=dispatch_fn, kwargs_dispatch_fn=kwargs_dispatch_fn, memory_store=memory_store, model_call_fn=model_call_fn, delegate_fn=delegate_fn, trace_fn=trace_fn)
+                return (idx, res)
+
+            with ThreadPoolExecutor(max_workers=min(len(expr.expressions), 8)) as executor:
+                futures = [executor.submit(_eval_one, i, e) for i, e in enumerate(expr.expressions)]
+                for fut in futures:
+                    idx, res = fut.result()
+                    if isinstance(res, Err):
+                        return res
+                    results[idx] = res.ok_value
+
+            return Ok(results)
 
         return Err(
             EvalError(

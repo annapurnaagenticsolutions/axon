@@ -417,7 +417,7 @@ def _validate_annotations(
     annotations: list[Annotation], context: str, line: int
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    known = {"budget", "schedule", "trace", "managed", "retry", "timeout", "cache"}
+    known = {"budget", "schedule", "trace", "managed", "retry", "timeout", "cache", "permission"}
     for annotation in annotations:
         if annotation.name not in known:
             diagnostics.append(

@@ -1,0 +1,200 @@
+[
+  {
+    "node": "TypeAliasDecl",
+    "name": "ReviewFinding",
+    "type_params": [],
+    "value": "{ severity: \"info\" | \"warning\" | \"error\", line_number: Int, message: Str }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "severity",
+        "type_str": "\"info\" | \"warning\" | \"error\"",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "line_number",
+        "type_str": "Int",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "message",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "line": 13
+  },
+  {
+    "node": "TypeAliasDecl",
+    "name": "CodeReview",
+    "type_params": [],
+    "value": "{ file: Str, summary: Str, findings: List<ReviewFinding>, approved: Bool }",
+    "fields": [
+      {
+        "node": "Param",
+        "name": "file",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "summary",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "findings",
+        "type_str": "List<ReviewFinding>",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "approved",
+        "type_str": "Bool",
+        "default": null
+      }
+    ],
+    "line": 19
+  },
+  {
+    "node": "PromptDecl",
+    "name": "ReviewPrompt",
+    "params": [
+      {
+        "node": "Param",
+        "name": "code",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "file_path",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "CodeReview",
+    "template": "You are a senior code reviewer. Review the following code file.\n\nFile: {file_path}\n\nCode:\n```\n{code}\n```\n\nProvide a structured review with:\n- summary: overall assessment (1-2 sentences)\n- findings: list of issues with severity, line number, and message\n- approved: true if no blocking issues, false otherwise\n\nReturn as: summary | findings | approved",
+    "annotations": [
+      {
+        "node": "Annotation",
+        "name": "budget",
+        "args": {
+          "tokens": "2000"
+        }
+      }
+    ],
+    "line": 26
+  },
+  {
+    "node": "ToolDecl",
+    "name": "ReadFile",
+    "params": [
+      {
+        "node": "Param",
+        "name": "file_path",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Str, ToolError>",
+    "docstrings": [
+      "Reads a source file from the local filesystem.",
+      "The path is resolved relative to the AXON source file's directory."
+    ],
+    "body": "fs.read(file_path)",
+    "annotations": [],
+    "line": 46,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "WriteReview",
+    "params": [
+      {
+        "node": "Param",
+        "name": "output_path",
+        "type_str": "Str",
+        "default": null
+      },
+      {
+        "node": "Param",
+        "name": "review",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<Bool, ToolError>",
+    "docstrings": [
+      "Writes the review output to a file.",
+      "Creates parent directories if needed."
+    ],
+    "body": "fs.write(output_path, review)",
+    "annotations": [],
+    "line": 52,
+    "parsed_body": null
+  },
+  {
+    "node": "ToolDecl",
+    "name": "ParseReview",
+    "params": [
+      {
+        "node": "Param",
+        "name": "raw_response",
+        "type_str": "Str",
+        "default": null
+      }
+    ],
+    "return_type": "Result<CodeReview, ToolError>",
+    "docstrings": [
+      "Extracts the review from the LLM response text.",
+      "Falls back to a simple summary if structured parsing fails."
+    ],
+    "body": "raw_response",
+    "annotations": [],
+    "line": 58,
+    "parsed_body": null
+  },
+  {
+    "node": "AgentDecl",
+    "name": "CodeReviewer",
+    "model": "@groq/llama-3.3-70b-versatile",
+    "tools": [
+      "ReadFile",
+      "WriteReview",
+      "ParseReview"
+    ],
+    "memory": {
+      "node": "MemoryDecl",
+      "kind": "ShortTerm",
+      "options": {
+        "capacity": "100"
+      }
+    },
+    "annotations": [],
+    "methods": [
+      {
+        "node": "MethodDecl",
+        "name": "run",
+        "params": [
+          {
+            "node": "Param",
+            "name": "file_path",
+            "type_str": "Str",
+            "default": null
+          }
+        ],
+        "return_type": "Result<Str, AgentError>",
+        "annotations": [],
+        "body": "think f\"Starting code review for: {file_path}\"\n\nlet code = act ReadFile(file_path: file_path)?\nstore memory.working[\"last_file\"] = file_path\nstore memory.working[\"code_length\"] = len(code)\n\nthink f\"Read {len(code)} characters. Sending to LLM for review...\"\n\nlet review_text = model.complete(ReviewPrompt(code, file_path))\n\nthink \"Review received. Saving to disk...\"\n\nlet output_file = \"review_output.md\"\nact WriteReview(output_path: output_file, review: review_text)?\n\nthink f\"Review saved to {output_file}\"\n\nOk(review_text)",
+        "parsed_body": null
+      }
+    ],
+    "workers": null,
+    "version": "0.1.0",
+    "line": 64
+  }
+]
