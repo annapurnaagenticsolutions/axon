@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXON Playground — Parse, Validate, Generate</title>
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <header class="toolbar">
+    <div class="toolbar-left">
+      <span class="logo">⚡ AXON Playground</span>
+      <select id="exampleSelect">
+        <option value="hello">hello.ax — Basic agent</option>
+        <option value="hello_run">hello_run.ax — Tool call</option>
+        <option value="versioned">versioned.ax — Versioned agent</option>
+        <option value="permissions">permissions.ax — @permission sandbox</option>
+        <option value="type_alias">type_alias.ax — Type aliases</option>
+        <option value="flow">flow.ax — Flow pipeline</option>
+        <option value="rag">rag.ax — RAG + prompts</option>
+        <option value="customer_support">customer_support.ax — Full example</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <div class="toolbar-right">
+      <span class="wasm-badge" id="wasmBadge">Checking WASM…</span>
+      <button id="parseBtn" class="btn primary" disabled>Parse</button>
+      <button id="copyBtn" class="btn">Copy Output</button>
+      <button id="downloadBtn" class="btn">Download</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <div class="panel source-panel">
+      <div class="panel-header">
+        <span class="panel-title">AXON Source</span>
+        <span class="panel-meta" id="sourceMeta">0 lines</span>
+      </div>
+      <div class="editor-wrap">
+        <div class="line-numbers" id="lineNumbers">1</div>
+        <textarea id="source" spellcheck="false" placeholder="Type or paste AXON source here…"></textarea>
+      </div>
+    </div>
+
+    <div class="resizer" id="resizer"></div>
+
+    <div class="panel output-panel">
+      <div class="panel-header">
+        <div class="tabs">
+          <button class="tab active" data-tab="ir">IR JSON</button>
+          <button class="tab" data-tab="ast">AST</button>
+          <button class="tab" data-tab="validate">Validate</button>
+          <button class="tab" data-tab="go">Go</button>
+          <button class="tab" data-tab="rust">Rust</button>
+          <button class="tab" data-tab="ts">TypeScript</button>
+          <button class="tab" data-tab="mcp">MCP</button>
+          <button class="tab" data-tab="expr">Expr Eval</button>
+        </div>
+        <span class="panel-meta" id="outputMeta">AxonIR v0.2</span>
+      </div>
+      <pre id="output" class="json-view"><code class="placeholder">Click <strong>Parse</strong> to generate IR JSON…</code></pre>
+      <div id="astTree" class="ast-tree-view" style="display:none;"></div>
+    </div>
+  </main>
+
+  <section class="expr-panel" id="exprPanel" style="display:none;">
+    <div class="expr-header">
+      <span class="panel-title">Expression Evaluator</span>
+      <button id="evalBtn" class="btn primary">Evaluate</button>
+    </div>
+    <div class="expr-body">
+      <div class="expr-input-group">
+        <label>Expression</label>
+        <input type="text" id="exprInput" placeholder="e.g. 1 + 2 * 3" spellcheck="false">
+      </div>
+      <div class="expr-input-group">
+        <label>Scope (JSON)</label>
+        <input type="text" id="scopeInput" placeholder='e.g. {"x": 10, "y": 20}' spellcheck="false">
+      </div>
+      <div class="expr-input-group">
+        <label>Max Depth</label>
+        <input type="number" id="depthInput" value="100" min="1" max="10000" style="width:80px;">
+      </div>
+      <div class="expr-examples">
+        <button class="expr-example-btn" data-expr="1 + 2 * 3">1 + 2 * 3</button>
+        <button class="expr-example-btn" data-expr='if x > 5 { "big" } else { "small" }' data-scope='{"x": 10}'>if x > 5</button>
+        <button class="expr-example-btn" data-expr="for i in [1,2,3] { i * 2 }">for loop</button>
+        <button class="expr-example-btn" data-expr='let a = 5; let b = 3; a * b'>let bindings</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="status-bar" id="statusBar">
+    <span id="statusText">Ready — AXON Playground</span>
+  </footer>
+
+  <script type="module" src="playground.js"></script>
+</body>
+</html>
