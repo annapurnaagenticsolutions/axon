@@ -340,3 +340,78 @@ select {
 .ast-tree-view .collapsed > ul {
   display: none;
 }
+
+/* ── Light theme ──────────────────────────────────────────────────────────── */
+:root.light {
+  --bg: #ffffff;
+  --panel-bg: #f6f8fa;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --muted: #656d76;
+  --accent: #0969da;
+  --accent-hover: #218bff;
+  --success: #1a7f37;
+  --error: #cf222e;
+  --warning: #9a6700;
+  --keyword: #cf222e;
+  --string: #0a3069;
+  --type: #0550ae;
+  --comment: #656d76;
+  --number: #0550ae;
+  --json-key: #0a3069;
+  --json-string: #0a3069;
+  --json-number: #0550ae;
+  --json-bool: #cf222e;
+  --json-null: #cf222e;
+}
+:root.light .btn.primary { color: #fff; }
+:root.light .wasm-badge.ready { background: rgba(26,127,55,.12); }
+:root.light .wasm-badge.fallback { background: rgba(9,105,218,.12); }
+
+/* ── Mobile responsive ────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+    height: auto;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .toolbar-left, .toolbar-right {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .workspace {
+    flex-direction: column;
+    height: auto;
+  }
+  .panel {
+    min-height: 200px;
+    min-width: 100%;
+  }
+  .resizer {
+    width: 100%;
+    height: 4px;
+    cursor: row-resize;
+  }
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .tab {
+    white-space: nowrap;
+    padding: 0 8px;
+  }
+  .expr-panel {
+    height: auto;
+  }
+  .expr-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .expr-input-group input {
+    min-width: 100%;
+  }
+  html, body {
+    overflow: auto;
+  }
+}

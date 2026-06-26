@@ -2,6 +2,16 @@
 /* eslint-disable */
 
 /**
+ * Get AST snapshot JSON from AXON source.
+ */
+export function ast_snapshot(source: string): string;
+
+/**
+ * Generate code from AXON source for the given target (go, rust, typescript, mcp).
+ */
+export function codegen_axon(source: string, target: string): string;
+
+/**
  * Compile AXON source (parse + validate) and return IR JSON.
  * Returns error string if validation fails.
  */
@@ -32,6 +42,8 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly ast_snapshot: (a: number, b: number) => [number, number, number, number];
+    readonly codegen_axon: (a: number, b: number, c: number, d: number) => [number, number, number, number];
     readonly compile_axon: (a: number, b: number) => [number, number, number, number];
     readonly evaluate_expr: (a: number, b: number, c: number, d: number, e: number) => [number, number, number, number];
     readonly parse_axon: (a: number, b: number) => [number, number, number, number];

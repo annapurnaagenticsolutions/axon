@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AXON Playground — Parse, Validate, Generate</title>
+<meta name="description" content="AXON Playground — parse, validate, and generate Go, Rust, TypeScript, and MCP server code from AXON agent definitions.">
 <link rel="stylesheet" href="playground.css">
 </head>
 <body>
@@ -24,6 +25,8 @@
     </div>
     <div class="toolbar-right">
       <span class="wasm-badge" id="wasmBadge">Checking WASM…</span>
+      <button id="shareBtn" class="btn" title="Copy shareable URL">Share</button>
+      <button id="themeBtn" class="btn" title="Toggle theme">🌙</button>
       <button id="parseBtn" class="btn primary" disabled>Parse</button>
       <button id="copyBtn" class="btn">Copy Output</button>
       <button id="downloadBtn" class="btn">Download</button>

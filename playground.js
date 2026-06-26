@@ -292,6 +292,8 @@ const depthInput = $('depthInput');
 const evalBtn   = $('evalBtn');
 const workspace = document.querySelector('.workspace');
 const astTreeEl = $('astTree');
+const themeBtn  = $('themeBtn');
+const shareBtn  = $('shareBtn');
 
 // ---------------------------------------------------------------------------
 // Backend abstraction — WASM or server fallback
@@ -322,7 +324,12 @@ async function apiValidate(source) {
 
 async function apiCodegen(source, target) {
   if (wasmReady) {
-    return { error: 'Codegen requires the Python server backend. Start the playground server for code generation.' };
+    try {
+      const code = wasmModule.codegen_axon(source, target);
+      return { code };
+    } catch (e) {
+      return { error: typeof e === 'string' ? e : (e.message || String(e)) };
+    }
   }
   const resp = await fetch('/api/codegen', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -334,7 +341,7 @@ async function apiCodegen(source, target) {
 async function apiAst(source) {
   if (wasmReady) {
     try {
-      const json = wasmModule.parse_axon(source);
+      const json = wasmModule.ast_snapshot(source);
       return { ast: JSON.parse(json) };
     } catch (e) {
       return { error: typeof e === 'string' ? e : (e.message || String(e)) };
@@ -503,7 +510,7 @@ async function renderOutput() {
       const result = await apiCodegen(src, target);
       if (result.error) throw new Error(result.error);
       currentOutput = result.code;
-      outputEl.innerHTML = `<code class="code-output">${escapeHtml(result.code)}</code>`;
+      outputEl.innerHTML = `<code class="code-output">${highlightCode(result.code, currentTab)}</code>`;
     } catch (e) {
       outputEl.innerHTML = `<code class="error">${escapeHtml(e.message || String(e))}</code>`;
     }
@@ -585,6 +592,23 @@ function escapeHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+function highlightCode(code, lang) {
+  let html = escapeHtml(code);
+  const kw = {
+    go: /\b(package|import|func|type|struct|return|var|const|if|else|for|range|map|chan|go|defer|interface|nil|true|false)\b/g,
+    rust: /\b(pub|fn|struct|enum|impl|use|let|mut|return|if|else|match|for|while|loop|trait|type|self|Self|Option|Result|Some|None|Ok|Err|true|false|mod|const|static|where|async|await|move)\b/g,
+    ts: /\b(export|import|from|interface|type|class|extends|implements|return|if|else|for|while|switch|case|break|const|let|var|async|await|new|this|null|undefined|true|false|void|number|string|boolean|any|Promise)\b/g,
+    mcp: /\b(from|import|def|class|return|if|else|elif|for|while|try|except|finally|with|as|async|await|yield|lambda|None|True|False|self|raise|pass|in|not|and|or|is)\b/g,
+  };
+  const re = kw[lang] || kw.mcp;
+  html = html.replace(re, '<span class="code-keyword">$1</span>');
+  html = html.replace(/(\/\/[^\n]*)/g, '<span class="code-comment">$1</span>');
+  html = html.replace(/(#[^\n]*)/g, lang === 'mcp' ? '<span class="code-comment">$1</span>' : '$1');
+  html = html.replace(/("(?:[^"\\]|\\.)*")/g, '<span class="code-string">$1</span>');
+  html = html.replace(/(\b[A-Z][A-Za-z0-9_]*\b)/g, '<span class="code-type">$1</span>');
+  return html;
 }
 
 // ---------------------------------------------------------------------------
@@ -768,3 +792,51 @@ loadExample('hello');
 updateLineNumbers();
 parseBtn.disabled = true;
 initWasm();
+
+// ---------------------------------------------------------------------------
+// Theme toggle
+// ---------------------------------------------------------------------------
+(function initTheme() {
+  const saved = localStorage.getItem('axon-theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    themeBtn.textContent = '\u{2600}';
+  }
+})();
+
+themeBtn.addEventListener('click', () => {
+  const isLight = document.documentElement.classList.toggle('light');
+  themeBtn.textContent = isLight ? '\u{2600}' : '\u{1F319}';
+  localStorage.setItem('axon-theme', isLight ? 'light' : 'dark');
+});
+
+// ---------------------------------------------------------------------------
+// Shareable URL (encode source in hash fragment)
+// ---------------------------------------------------------------------------
+shareBtn.addEventListener('click', () => {
+  const src = sourceEl.value.trim();
+  if (!src) { setStatus('Nothing to share', 'error'); return; }
+  const hash = '#s=' + btoa(unescape(encodeURIComponent(src)));
+  const url = location.origin + location.pathname + hash;
+  navigator.clipboard.writeText(url).then(() => {
+    const orig = shareBtn.textContent;
+    shareBtn.textContent = 'Copied!';
+    setTimeout(() => shareBtn.textContent = orig, 1200);
+    setStatus('Share URL copied to clipboard', 'success');
+  }).catch(() => setStatus('Failed to copy URL', 'error'));
+});
+
+// Load from hash if present
+(function loadFromHash() {
+  if (location.hash.startsWith('#s=')) {
+    try {
+      const encoded = location.hash.slice(3);
+      const src = decodeURIComponent(escape(atob(encoded)));
+      sourceEl.value = src;
+      exampleSel.value = 'custom';
+      updateLineNumbers();
+    } catch (e) {
+      console.warn('Failed to load from hash:', e);
+    }
+  }
+})();

@@ -1,6 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export const ast_snapshot: (a: number, b: number) => [number, number, number, number];
+export const codegen_axon: (a: number, b: number, c: number, d: number) => [number, number, number, number];
 export const compile_axon: (a: number, b: number) => [number, number, number, number];
 export const evaluate_expr: (a: number, b: number, c: number, d: number, e: number) => [number, number, number, number];
 export const parse_axon: (a: number, b: number) => [number, number, number, number];
