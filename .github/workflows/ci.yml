@@ -32,7 +32,7 @@ jobs:
       - name: Install AXON with development extras
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[dev,serve]"
 
       - name: Compile Python sources
         run: python -m compileall -q src tests
