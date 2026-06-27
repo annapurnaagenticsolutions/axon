@@ -42,6 +42,7 @@ dev = [
     "pydantic>=2.0",
     "fastapi>=0.100",
     "uvicorn>=0.20",
+    "result>=0.9",
 ]
 providers = [
     "openai>=1.0"

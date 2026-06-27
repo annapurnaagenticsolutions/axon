@@ -41,6 +41,7 @@ OPTIONAL_RUNTIME_MODULES = {
     "sentence_transformers",
     "chromadb",
     "axon_parser",
+    "result",
 }
 
 # Keep a small fallback for interpreters where sys.stdlib_module_names is absent.

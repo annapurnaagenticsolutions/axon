@@ -67,10 +67,12 @@ def bench_file(path: Path):
         tmp_path = tf.name
 
     # Verify WASM parser can handle this file
+    pkg_path = PKG_DIR.as_posix().replace("'", "\\'")
+    src_path = tmp_path.replace("\\", "/")
     verify_script = f"""
-const {{ parse_axon }} = require('{PKG_DIR.as_posix().replace("'", "\\'")}/axon_parser.js');
+const {{ parse_axon }} = require('{pkg_path}/axon_parser.js');
 const fs = require('fs');
-const src = fs.readFileSync('{tmp_path.replace("\\", "/")}', 'utf8');
+const src = fs.readFileSync('{src_path}', 'utf8');
 try {{ parse_axon(src); console.log('OK'); }}
 catch(e) {{ console.log('ERR: ' + e); }}
 """
@@ -81,9 +83,9 @@ catch(e) {{ console.log('ERR: ' + e); }}
         return
 
     bench_script = f"""
-const {{ parse_axon }} = require('{PKG_DIR.as_posix().replace("'", "\\'")}/axon_parser.js');
+const {{ parse_axon }} = require('{pkg_path}/axon_parser.js');
 const fs = require('fs');
-const src = fs.readFileSync('{tmp_path.replace("\\", "/")}', 'utf8');
+const src = fs.readFileSync('{src_path}', 'utf8');
 const start = process.hrtime.bigint();
 for (let i = 0; i < {ITERATIONS}; i++) {{
     parse_axon(src);
