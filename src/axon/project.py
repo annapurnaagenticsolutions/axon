@@ -102,6 +102,264 @@ def init_project(path: str | Path = ".", *, force: bool = False) -> ProjectInitR
     return ProjectInitResult(path=root, created=created, skipped=skipped, overwritten=overwritten)
 
 
+def create_project_with_template(
+    path: str | Path, template: str, *, force: bool = False
+) -> ProjectInitResult:
+    """Create a new AXON project with a pre-built agent template."""
+    target = Path(path).expanduser().resolve()
+    if target.exists() and not target.is_dir():
+        raise ProjectInitError(f"target exists and is not a directory: {target}")
+    if target.exists() and any(target.iterdir()) and not force:
+        raise ProjectInitError(f"target directory is not empty: {target}; pass --force to add missing AXON files")
+
+    root = target
+    root.mkdir(parents=True, exist_ok=True)
+    project_name = _project_name(root)
+
+    files = _starter_files(project_name)
+    template_files = _template_files(project_name, template)
+    files.update(template_files)
+
+    created: list[Path] = []
+    skipped: list[Path] = []
+    overwritten: list[Path] = []
+
+    for relative, content in files.items():
+        destination = root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        normalized_content = content.rstrip() + "\n"
+
+        if destination.exists() and not force:
+            skipped.append(relative)
+            continue
+
+        existed = destination.exists()
+        destination.write_text(normalized_content, encoding="utf-8")
+        if existed:
+            overwritten.append(relative)
+        else:
+            created.append(relative)
+
+    return ProjectInitResult(path=root, created=created, skipped=skipped, overwritten=overwritten)
+
+
+_TEMPLATES: dict[str, dict[str, str]] = {
+    "customer-support": {
+        "agent.ax": '''import { Chunk } from "axon:types"
+
+type SupportResponse = {
+    answer: Str,
+    confidence: Float,
+    escalated: Bool
+}
+
+tool AnswerFAQ(question: Str) -> Str {
+    /// Answers a customer question from FAQ knowledge.
+    "Based on our FAQ: {question}"
+}
+
+tool CreateTicket(title: Str, priority: "low" | "medium" | "high" = "medium") -> Str {
+    /// Creates a support ticket when escalation is needed.
+    "Ticket created: {title} [{priority}]"
+}
+
+agent CustomerSupportAgent {
+    model: @mock/gpt
+    tools: [AnswerFAQ, CreateTicket]
+    memory: Memory<Semantic>
+
+    fn handle(question: Str) -> Str {
+        let answer = act AnswerFAQ(question: question)?
+        store memory.working["last_question"] = question
+        answer
+    }
+}
+
+test "faq answer" {
+    assert CustomerSupportAgent.run("How do I reset my password?") == "Based on our FAQ: How do I reset my password?"
+}
+''',
+        "README.md": '''# {name} — Customer Support Agent
+
+A customer support agent built with AXON, featuring:
+- FAQ answering tool
+- Ticket creation for escalations
+- Semantic memory for conversation context
+
+## Try it
+
+```bash
+axon validate agent.ax
+axon run agent.ax --mock
+axon test agent.ax
+axon govern agent.ax --mesh-url http://localhost:8000
+```
+''',
+    },
+    "code-review": {
+        "agent.ax": '''tool AnalyzeCode(code: Str) -> Str {
+    /// Analyzes code for issues and returns a review summary.
+    "Review: {code[:50]}... — looks good"
+}
+
+tool SuggestFix(issue: Str) -> Str {
+    /// Suggests a fix for a code issue.
+    "Fix: {issue}"
+}
+
+agent CodeReviewer {
+    model: @mock/gpt
+    tools: [AnalyzeCode, SuggestFix]
+
+    fn review(code: Str) -> Str {
+        let analysis = act AnalyzeCode(code: code)?
+        analysis
+    }
+}
+
+test "code review" {
+    assert CodeReviewer.run("def hello(): pass") == "Review: def hello(): pass... — looks good"
+}
+''',
+        "README.md": '''# {name} — Code Review Agent
+
+Automated code review agent that analyzes snippets and suggests fixes.
+
+## Try it
+
+```bash
+axon validate agent.ax
+axon run agent.ax --mock
+axon test agent.ax
+```
+''',
+    },
+    "data-analysis": {
+        "agent.ax": '''tool RunQuery(query: Str) -> Str {
+    /// Executes a data query and returns results.
+    "Result for: {query}"
+}
+
+tool Visualize(data: Str, chart_type: "bar" | "line" | "pie" = "bar") -> Str {
+    /// Generates a visualization from data.
+    "Chart({chart_type}): {data}"
+}
+
+agent DataAnalyst {
+    model: @mock/gpt
+    tools: [RunQuery, Visualize]
+
+    fn analyze(query: Str) -> Str {
+        let result = act RunQuery(query: query)?
+        act Visualize(data: result, chart_type: "bar")?
+    }
+}
+
+test "query execution" {
+    assert DataAnalyst.run("SELECT * FROM users") == "Chart(bar): Result for: SELECT * FROM users"
+}
+''',
+        "README.md": '''# {name} — Data Analysis Agent
+
+Query execution and visualization agent.
+
+## Try it
+
+```bash
+axon validate agent.ax
+axon run agent.ax --mock
+axon test agent.ax
+```
+''',
+    },
+    "research": {
+        "agent.ax": '''tool WebSearch(query: Str) -> Str {
+    /// Searches the web for information.
+    "Search results for: {query}"
+}
+
+tool Summarize(text: Str) -> Str {
+    /// Summarizes text content.
+    "Summary: {text[:40]}..."
+}
+
+agent ResearchAgent {
+    model: @mock/gpt
+    tools: [WebSearch, Summarize]
+    memory: Memory<ShortTerm>
+
+    fn research(topic: Str) -> Str {
+        let results = act WebSearch(query: topic)?
+        store memory.working["topic"] = topic
+        act Summarize(text: results)?
+    }
+}
+
+test "research workflow" {
+    assert ResearchAgent.run("AI governance") == "Summary: Search results for: AI governance..."
+}
+''',
+        "README.md": '''# {name} — Research Agent
+
+Multi-step research agent with web search and summarization.
+
+## Try it
+
+```bash
+axon validate agent.ax
+axon run agent.ax --mock
+axon test agent.ax
+```
+''',
+    },
+    "general": {
+        "agent.ax": '''tool Process(input: Str) -> Str {
+    /// Processes input and returns a result.
+    "Processed: {input}"
+}
+
+agent Agent {
+    model: @mock/gpt
+    tools: [Process]
+
+    fn run(input: Str) -> Str {
+        act Process(input: input)?
+    }
+}
+
+test "process input" {
+    assert Agent.run("hello") == "Processed: hello"
+}
+''',
+        "README.md": '''# {name} — General Purpose Agent
+
+A minimal AXON agent template.
+
+## Try it
+
+```bash
+axon validate agent.ax
+axon run agent.ax --mock
+axon test agent.ax
+```
+''',
+    },
+}
+
+
+def _template_files(project_name: str, template: str) -> dict[Path, str]:
+    """Get template-specific files."""
+    template_data = _TEMPLATES.get(template, _TEMPLATES["general"])
+    files: dict[Path, str] = {}
+    for filename, content in template_data.items():
+        content = content.replace("{name}", project_name)
+        if filename == "agent.ax":
+            files[Path("examples/agent.ax")] = content
+        else:
+            files[Path(filename)] = content
+    return files
+
+
 def _project_name(root: Path) -> str:
     raw = root.name or "axon-project"
     slug = re.sub(r"[^A-Za-z0-9_-]+", "-", raw).strip("-_")

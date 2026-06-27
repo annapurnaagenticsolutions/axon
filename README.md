@@ -185,8 +185,11 @@ Implemented tooling:
 - dependency and optional-extra auditing with `axon deps` / `axon dependency-audit`
 - repository hygiene and ignore-rule auditing with `axon hygiene` / `axon repo-hygiene`
 - local Git hook template and quality-gate running with `axon precommit`
-- project creation with `axon new`
+- project creation with `axon new` (supports `--template` for pre-built agent templates)
 - project initialization with `axon init`
+- interactive quickstart wizard with `axon quickstart` — scaffold, validate, and mock-run in 60 seconds
+- agent testing with `axon test` — run test blocks with assertions against mock providers
+- quick reference with `axon cheatsheet` — one-page DSL syntax and CLI command reference
 - safe provider config inspection with `axon config`
 - syntax diagnostics with `axon syntax`
 - static semantic validation with `axon validate`
@@ -600,7 +603,10 @@ Create a new AXON project skeleton.
 ```bash
 axon new my-agent-project
 axon new my-agent-project --force
+axon new my-agent-project --template customer-support
 ```
+
+Templates: `general`, `customer-support`, `code-review`, `data-analysis`, `research`.
 
 Generated starter files:
 
@@ -625,6 +631,43 @@ axon init path/to/project
 ```
 
 Without `--force`, existing starter files are preserved.
+
+### `axon quickstart`
+
+Interactive wizard that scaffolds a working, validated, mock-run agent in under 60 seconds.
+
+```bash
+axon quickstart
+axon quickstart ./my-agent --name "My Agent" --use-case customer-support --model anthropropic
+axon quickstart . --non-interactive --use-case research --model mock
+```
+
+Prompts for project name, use case, model provider, and governance preferences. Generates a tailored `.ax` file, validates it, and runs it with a mock provider. Use `--non-interactive` for CI/scripting.
+
+### `axon test`
+
+Run test blocks from AXON source files against mock providers.
+
+```bash
+axon test examples/agent.ax
+axon test examples/agent.ax --verbose --json
+```
+
+Test blocks use the syntax:
+
+```
+test "test name" {
+    assert AgentName.run(args) == expected_value
+}
+```
+
+### `axon cheatsheet`
+
+Prints a one-page quick reference of AXON DSL syntax and common CLI commands.
+
+```bash
+axon cheatsheet
+```
 
 
 ### `axon project-info`

@@ -1,0 +1,69 @@
+name: AXON Governance Check
+
+description: "Validate AXON agent files and run governance checks on every PR"
+
+inputs:
+  axon-files:
+    description: "Glob pattern for AXON files to check (default: examples/*.ax)"
+    required: false
+    default: "examples/*.ax"
+  mesh-url:
+    description: "AgentOps Mesh API URL (optional, for governance submission)"
+    required: false
+    default: ""
+  fail-on-blocked:
+    description: "Fail the workflow if governance decision is 'blocked'"
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install AXON DSL
+      shell: bash
+      run: pip install axon-dsl[dev]
+
+    - name: Validate AXON files
+      shell: bash
+      run: |
+        set -e
+        for f in ${{ inputs.axon-files }}; do
+          if [ -f "$f" ]; then
+            echo "::group::Validating $f"
+            axon validate "$f" --warnings-as-errors
+            echo "::endgroup::"
+          fi
+        done
+
+    - name: Run agent tests
+      shell: bash
+      run: |
+        for f in ${{ inputs.axon-files }}; do
+          if [ -f "$f" ]; then
+            echo "::group::Testing $f"
+            axon test "$f" --verbose || true
+            echo "::endgroup::"
+          fi
+        done
+
+    - name: Governance check
+      if: ${{ inputs.mesh-url != '' }}
+      shell: bash
+      run: |
+        set -e
+        for f in ${{ inputs.axon-files }}; do
+          if [ -f "$f" ]; then
+            echo "::group::Governance: $f"
+            if [ "${{ inputs.fail-on-blocked }}" == "true" ]; then
+              axon govern "$f" --mesh-url "${{ inputs.mesh-url }}"
+            else
+              axon govern "$f" --mesh-url "${{ inputs.mesh-url }}" || true
+            fi
+            echo "::endgroup::"
+          fi
+        done

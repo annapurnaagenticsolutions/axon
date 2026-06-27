@@ -78,6 +78,9 @@ EXPECTED_COMMANDS = [
     "replay",
     "dashboard",
     "playground",
+    "quickstart",
+    "test",
+    "cheatsheet",
 ]
 
 EXPECTED_OPTIONS = {
@@ -101,7 +104,7 @@ EXPECTED_OPTIONS = {
     "runtime-governance": ["--examples-dir", "--snapshot-dir", "--skip-corpus", "--json"],
     "runtime-governance-evidence": ["--examples-dir", "--snapshot-dir", "--skip-corpus", "--output", "--format", "--json"],
     "runtime-governance-gate": ["--examples-dir", "--snapshot-dir", "--skip-corpus", "--json"],
-    "new": ["--force"],
+    "new": ["--force", "--template"],
     "init": ["--force"],
     "deps": ["--json"],
     "dependency-audit": ["--json"],
@@ -141,6 +144,9 @@ EXPECTED_OPTIONS = {
     "replay": ["--compare", "--threshold", "--json"],
     "dashboard": ["--trace", "--metrics", "--json", "--serve"],
     "playground": ["--host", "--port"],
+    "quickstart": ["--name", "--use-case", "--model", "--non-interactive"],
+    "test": ["--json", "--verbose"],
+    "cheatsheet": [],
 }
 
 

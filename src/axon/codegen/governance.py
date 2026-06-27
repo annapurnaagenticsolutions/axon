@@ -60,6 +60,32 @@ def generate_governance_submission(
     scores = _infer_scores(agent, tools, rags, flows, types)
     submitted_artifacts = _build_artifacts(source_filename, agent, tools, rags, flows)
 
+    # Override with @governance annotation values if present
+    gov_annotation = _extract_governance_annotation(agent)
+    if gov_annotation:
+        if "autonomy" in gov_annotation:
+            try:
+                autonomy_level = int(gov_annotation["autonomy"])
+            except (ValueError, TypeError):
+                pass
+        if "risk" in gov_annotation:
+            risk_factors = _override_risk(risk_factors, gov_annotation["risk"])
+        if "domain" in gov_annotation:
+            domain = gov_annotation["domain"].strip('"').strip("'")
+        if "artifacts" in gov_annotation:
+            extra_artifacts = _parse_artifact_list(gov_annotation["artifacts"])
+            for a in extra_artifacts:
+                if a not in submitted_artifacts:
+                    submitted_artifacts.append(a)
+        if "business_owner" in gov_annotation:
+            business_owner = gov_annotation["business_owner"].strip('"').strip("'")
+        if "technical_owner" in gov_annotation:
+            technical_owner = gov_annotation["technical_owner"].strip('"').strip("'")
+        if "target_environment" in gov_annotation:
+            target_environment = gov_annotation["target_environment"].strip('"').strip("'")
+        if "description" in gov_annotation:
+            description = gov_annotation["description"].strip('"').strip("'")
+
     return {
         "use_case_id": use_case_id,
         "name": name,
@@ -263,3 +289,41 @@ def _memory_summary(agent: AgentDecl) -> str | None:
         return None
     opts = ", ".join(f"{k}={v}" for k, v in agent.memory.options.items())
     return f"{agent.memory.kind}({opts})" if opts else agent.memory.kind
+
+
+def _extract_governance_annotation(agent: AgentDecl) -> dict[str, str] | None:
+    """Extract @governance annotation args from an agent declaration."""
+    for ann in (agent.annotations or []):
+        if ann.name == "governance" and ann.args:
+            return dict(ann.args)
+    return None
+
+
+def _override_risk(risk_factors: dict[str, Any], risk_level: str) -> dict[str, Any]:
+    """Override risk factors based on explicit @governance risk level."""
+    level = risk_level.strip('"').strip("'").lower()
+    if level in ("low", "minimal"):
+        risk_factors["external_action"] = False
+        risk_factors["financial_impact"] = "none"
+        risk_factors["reversibility"] = "easy"
+        risk_factors["customer_or_employee_impact"] = "low"
+    elif level in ("medium", "moderate"):
+        risk_factors["external_action"] = True
+        risk_factors["financial_impact"] = "medium"
+        risk_factors["reversibility"] = "moderate"
+        risk_factors["customer_or_employee_impact"] = "medium"
+    elif level in ("high", "critical"):
+        risk_factors["external_action"] = True
+        risk_factors["financial_impact"] = "high"
+        risk_factors["reversibility"] = "hard"
+        risk_factors["customer_or_employee_impact"] = "high"
+    return risk_factors
+
+
+def _parse_artifact_list(artifacts_str: str) -> list[str]:
+    """Parse a bracketed list of artifact names from annotation args."""
+    s = artifacts_str.strip()
+    if s.startswith("[") and s.endswith("]"):
+        s = s[1:-1]
+    items = [a.strip().strip('"').strip("'") for a in s.split(",")]
+    return [a for a in items if a]

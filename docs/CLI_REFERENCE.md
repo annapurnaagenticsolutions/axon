@@ -55,6 +55,9 @@ axon secret get KEY [--reveal] [--file path]
 axon secret set KEY VALUE [--file path]
 axon secret delete KEY [--file path]
 axon secret audit [--key KEY]
+axon quickstart [path] [--name NAME] [--use-case USE_CASE] [--model PROVIDER] [--non-interactive]
+axon test <source.ax> [--json] [--verbose]
+axon cheatsheet
 ```
 
 ## Database configuration
@@ -183,9 +186,41 @@ axon changelog [--version VERSION] [--date YYYY-MM-DD] [--path PATH] [--change T
 ## Project commands
 
 ```bash
-axon new <path> [--force]
+axon new <path> [--force] [--template general|customer-support|code-review|data-analysis|research]
 axon init [path] [--force]
 ```
+
+## `axon quickstart`
+
+```bash
+axon quickstart [path] [--name NAME] [--use-case general|customer-support|code-review|data-analysis|research] [--model mock|openai|anthropic|groq|ollama] [--non-interactive]
+```
+
+Interactive wizard that scaffolds a working agent in under 60 seconds. Prompts for use case, model provider, and governance preferences, then generates a tailored `.ax` file, validates it, and runs it with a mock provider. Use `--non-interactive` for CI/scripting.
+
+## `axon test`
+
+```bash
+axon test <source.ax> [--json] [--verbose]
+```
+
+Runs test blocks defined in AXON source files against mock providers. Test blocks use the syntax:
+
+```
+test "test name" {
+    assert AgentName.run(args) == expected_value
+}
+```
+
+Returns exit code 0 if all tests pass, 1 if any fail. Use `--verbose` to show passing tests, `--json` for machine-readable output.
+
+## `axon cheatsheet`
+
+```bash
+axon cheatsheet
+```
+
+Prints a one-page quick reference of AXON DSL syntax and common CLI commands.
 
 ## Dependency audit
 

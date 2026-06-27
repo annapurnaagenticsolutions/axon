@@ -40,6 +40,7 @@ from axon.formatter import check_format_file, format_file, write_formatted_file
 from axon.foundation_audit import audit_foundation, format_foundation_audit_report, foundation_audit_to_json
 from axon.info import collect_info, format_info, format_version, info_to_json, version_to_json
 from axon.project import ProjectInitError, create_project, init_project
+from axon.project import create_project_with_template
 from axon.project_info import collect_project_info, format_project_info, project_info_to_json
 from axon.precommit import (
     PrecommitError,
@@ -928,6 +929,84 @@ def serve_file(
     return int(completed.returncode)
 
 
+def test_command(source: str, *, verbose: bool = False, json_output: bool = False) -> tuple[int, str]:
+    """Run test blocks from an AXON source file against mock providers."""
+    source_path = Path(source)
+    if not source_path.exists():
+        raise AxonCLIError(f"Source file not found: {source}")
+
+    from axon.testing import run_tests
+
+    results = run_tests(source_path.read_text(encoding="utf-8"))
+
+    if json_output:
+        import json
+        return (0 if all(r.passed for r in results) else 1), json.dumps(
+            [r.to_dict() for r in results], indent=2
+        )
+
+    if not results:
+        return 0, "No test blocks found. Add tests with:\n  test \"name\" {\n    assert Agent.run(arg) == expected\n  }"
+
+    lines = [f"AXON Tests: {len(results)} total"]
+    passed = sum(1 for r in results if r.passed)
+    failed = len(results) - passed
+    lines.append(f"  {passed} passed, {failed} failed")
+
+    for r in results:
+        if r.passed and not verbose:
+            continue
+        status = "PASS" if r.passed else "FAIL"
+        lines.append(f"  [{status}] {r.name}")
+        if not r.passed:
+            lines.append(f"    Expected: {r.expected}")
+            lines.append(f"    Actual:   {r.actual}")
+            if r.error:
+                lines.append(f"    Error:    {r.error}")
+
+    return (0 if failed == 0 else 1), "\n".join(lines)
+
+
+_CHEATSHEET = """\
+AXON DSL Quick Reference
+========================
+
+Declarations:
+  tool Name(params) -> ReturnType { body }
+  agent Name { model: @provider/model  tools: [Tool1, Tool2]  fn run() -> Type { ... } }
+  prompt Name(params) -> Type { "template" }
+  rag Name { source: "..."  chunker: ...  embedder: ...  store: ... }
+  flow Name { stage Step1 { ... } }
+  type Alias = { field: Type }
+
+Agent body keywords:
+  act ToolName(args)?      — call a tool, propagate errors
+  think expr               — model inference step
+  observe expr             — observation step
+  store memory.key = expr  — persist to memory
+
+Annotations:
+  @budget(tokens: 600)     — token budget for prompt
+  @governance(autonomy: 3, risk: "medium", domain: "support")
+
+Common CLI commands:
+  axon quickstart                          — interactive wizard
+  axon new ./my-project --template research — scaffold from template
+  axon validate file.ax                    — parse + validate
+  axon run file.ax --mock                  — execute with mock provider
+  axon test file.ax                        — run test blocks
+  axon build file.ax --stdout              — generate Python server
+  axon compile file.ax --target rust       — compile to Rust
+  axon govern file.ax --mesh-url URL       — submit to AgentOps Mesh
+  axon playground --port 8080              — launch web playground
+  axon cheatsheet                          — this reference
+"""
+
+
+def _print_cheatsheet() -> str:
+    return _CHEATSHEET
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the AXON CLI and return a process exit code."""
     parser = _make_arg_parser()
@@ -1132,13 +1211,40 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0 if report.passed else 1
 
         if args.command == "new":
-            result = create_project(args.path, force=args.force)
+            template = getattr(args, "template", None)
+            if template:
+                result = create_project_with_template(args.path, template, force=args.force)
+            else:
+                result = create_project(args.path, force=args.force)
             print(result.format())
             return 0
 
         if args.command == "init":
             result = init_project(args.path, force=args.force)
             print(result.format())
+            return 0
+
+        if args.command == "quickstart":
+            from axon.quickstart import run_quickstart
+            return run_quickstart(
+                args.path,
+                name=args.name,
+                use_case=args.use_case,
+                model=args.model,
+                non_interactive=args.non_interactive,
+            )
+
+        if args.command == "test":
+            code, output = test_command(
+                args.source,
+                verbose=args.verbose,
+                json_output=args.json,
+            )
+            print(output)
+            return code
+
+        if args.command == "cheatsheet":
+            print(_print_cheatsheet())
             return 0
 
         if args.command == "precommit":
@@ -2736,6 +2842,65 @@ def _make_arg_parser() -> argparse.ArgumentParser:
         "--force",
         action="store_true",
         help="allow adding starter files to a non-empty directory and overwrite AXON starter files",
+    )
+    new.add_argument(
+        "--template",
+        choices=["general", "customer-support", "code-review", "data-analysis", "research"],
+        default=None,
+        help="use a pre-built agent template instead of the minimal skeleton",
+    )
+
+    quickstart_cmd = subcommands.add_parser(
+        "quickstart",
+        help="interactive wizard: scaffold, validate, and mock-run an agent in 60 seconds",
+    )
+    quickstart_cmd.add_argument(
+        "path",
+        nargs="?",
+        default=".",
+        help="directory for the new project; defaults to current directory",
+    )
+    quickstart_cmd.add_argument(
+        "--name",
+        help="project name (defaults to directory name)",
+    )
+    quickstart_cmd.add_argument(
+        "--use-case",
+        choices=["general", "customer-support", "code-review", "data-analysis", "research"],
+        default=None,
+        help="use case template for non-interactive mode",
+    )
+    quickstart_cmd.add_argument(
+        "--model",
+        choices=["mock", "openai", "anthropic", "groq", "ollama"],
+        default=None,
+        help="model provider for non-interactive mode",
+    )
+    quickstart_cmd.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="run without prompts, using defaults or provided flags",
+    )
+
+    test_cmd = subcommands.add_parser(
+        "test",
+        help="run agent tests against mock providers with assertions",
+    )
+    test_cmd.add_argument("source", help="path to the .ax file containing test blocks")
+    test_cmd.add_argument(
+        "--json",
+        action="store_true",
+        help="print test results as JSON",
+    )
+    test_cmd.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="show all test results including passing tests",
+    )
+
+    cheatsheet_cmd = subcommands.add_parser(
+        "cheatsheet",
+        help="print a one-page quick reference of AXON DSL syntax and CLI commands",
     )
 
     init = subcommands.add_parser(
