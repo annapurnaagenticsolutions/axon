@@ -351,6 +351,7 @@ def _audit_source_imports(project: Path, source_file: Path, rel_path: Path) -> l
         "cli.py",
         "dashboard.py",
         "distributed_bus.py",
+        "lsp_server.py",
         "native_evaluator.py",
         "otel_exporter.py",
         "otlp_exporter.py",
