@@ -5,7 +5,7 @@ Thank you for your interest in contributing to AXON! This document outlines the 
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/annapurna-agentics/axon.git`
+2. Clone your fork: `git clone https://github.com/annapurnaagenticsolutions/axon.git`
 3. Install in development mode: `python -m pip install -e ".[dev]"`
 4. Run tests: `pytest`
 

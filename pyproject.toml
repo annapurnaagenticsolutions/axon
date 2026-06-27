@@ -33,6 +33,13 @@ classifiers = [
 ]
 dependencies = []
 
+[project.urls]
+Homepage = "https://annapurnaagenticsolutions.github.io/axon/"
+Repository = "https://github.com/annapurnaagenticsolutions/axon"
+Documentation = "https://github.com/annapurnaagenticsolutions/axon#readme"
+Issues = "https://github.com/annapurnaagenticsolutions/axon/issues"
+Changelog = "https://github.com/annapurnaagenticsolutions/axon/releases"
+
 [project.optional-dependencies]
 serve = [
     "fastmcp>=0.4.0"
