@@ -23,7 +23,7 @@ def test_current_project_hygiene_passes_without_errors():
     assert report.passed, format_hygiene_report(report)
     assert report.error_count == 0
     assert "*.py[cod]" in report.present_patterns
-    assert "*_server.py" in report.present_patterns
+    assert "hello_server.py" in report.present_patterns
     assert ".env" in report.present_patterns
 
 
@@ -95,7 +95,7 @@ def test_hygiene_warns_for_generated_output(tmp_path: Path):
 def test_write_default_gitignore(tmp_path: Path):
     destination = write_default_gitignore(tmp_path / ".gitignore")
     assert destination.exists()
-    assert "*_server.py" in destination.read_text(encoding="utf-8")
+    assert "hello_server.py" in destination.read_text(encoding="utf-8")
 
 
 def test_write_default_gitignore_refuses_overwrite_without_force(tmp_path: Path):
