@@ -26,6 +26,7 @@
     <div class="toolbar-right">
       <span class="wasm-badge" id="wasmBadge">Checking WASM…</span>
       <button id="shareBtn" class="btn" title="Copy shareable URL">Share</button>
+      <button id="tutorialBtn" class="btn" title="Start interactive tutorial">📖 Tutorial</button>
       <button id="themeBtn" class="btn" title="Toggle theme">🌙</button>
       <button id="parseBtn" class="btn primary" disabled>Parse</button>
       <button id="copyBtn" class="btn">Copy Output</button>
@@ -112,5 +113,23 @@
   </footer>
 
   <script type="module" src="playground.js"></script>
+
+  <div id="tutorialOverlay" class="tutorial-overlay" style="display:none;">
+    <div class="tutorial-backdrop"></div>
+    <div class="tutorial-card" id="tutorialCard">
+      <div class="tutorial-header">
+        <span class="tutorial-step-badge" id="tutorialStepBadge">Step 1 / 8</span>
+        <button class="tutorial-close" id="tutorialClose">&times;</button>
+      </div>
+      <h3 class="tutorial-title" id="tutorialTitle">Welcome to AXON Playground</h3>
+      <p class="tutorial-body" id="tutorialBody">Let's take a quick tour of the key features.</p>
+      <div class="tutorial-actions">
+        <button class="btn" id="tutorialPrev">← Back</button>
+        <button class="btn" id="tutorialSkip">Skip</button>
+        <button class="btn primary" id="tutorialNext">Next →</button>
+      </div>
+      <div class="tutorial-progress" id="tutorialProgress"></div>
+    </div>
+  </div>
 </body>
 </html>

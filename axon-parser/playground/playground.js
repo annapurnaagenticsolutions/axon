@@ -1235,3 +1235,176 @@ shareBtn.addEventListener('click', () => {
     }
   }
 })();
+
+// ---------------------------------------------------------------------------
+// Interactive Tutorial
+// ---------------------------------------------------------------------------
+const tutorialOverlay = $('tutorialOverlay');
+const tutorialCard = $('tutorialCard');
+const tutorialTitle = $('tutorialTitle');
+const tutorialBody = $('tutorialBody');
+const tutorialStepBadge = $('tutorialStepBadge');
+const tutorialPrev = $('tutorialPrev');
+const tutorialNext = $('tutorialNext');
+const tutorialSkip = $('tutorialSkip');
+const tutorialClose = $('tutorialClose');
+const tutorialProgress = $('tutorialProgress');
+
+let tutorialStep = 0;
+let highlightedEl = null;
+
+const TUTORIAL_STEPS = [
+  {
+    title: 'Welcome to AXON Playground',
+    body: 'AXON is a typed DSL for autonomous agents. This playground lets you write, parse, validate, and compile agents in your browser. Let\'s take a 60-second tour!',
+    selector: null,
+  },
+  {
+    title: 'Source Editor',
+    body: 'This is where you write AXON source code. Try editing the code — parsing happens automatically as you type. Use Ctrl+Enter to force a re-parse.',
+    selector: '#source',
+  },
+  {
+    title: 'Example Gallery',
+    body: 'Pick from pre-built examples ranging from basic agents to RAG pipelines and customer support bots. Each example demonstrates different AXON features like tools, flows, prompts, and governance.',
+    selector: '#exampleSelect',
+  },
+  {
+    title: 'Output Tabs',
+    body: 'After parsing, switch between output views: IR JSON (the intermediate representation), AST tree view, validation diagnostics, and code generation for Go, Rust, TypeScript, or MCP servers.',
+    selector: '.tabs',
+  },
+  {
+    title: 'Validate Tab',
+    body: 'Click the "Validate" tab to see static analysis diagnostics — type errors, warnings, and best-practice hints. AXON catches issues before runtime.',
+    selector: '.tab[data-tab="validate"]',
+    action: () => { document.querySelector('.tab[data-tab="validate"]').click(); },
+  },
+  {
+    title: 'Code Generation',
+    body: 'Switch to Go, Rust, TypeScript, or MCP tabs to see compiled output. AXON compiles to production-ready server code. Use the ZIP button to download all targets at once.',
+    selector: '.tab[data-tab="ts"]',
+    action: () => { document.querySelector('.tab[data-tab="ts"]').click(); },
+  },
+  {
+    title: 'Governance Submission',
+    body: 'The Govern tab compiles your agent into an AgentOps Mesh governance submission. Set the Mesh URL and click "Submit to Governance" to run the 9-gate evaluation workflow.',
+    selector: '.tab[data-tab="govern"]',
+    action: () => { document.querySelector('.tab[data-tab="govern"]').click(); },
+  },
+  {
+    title: 'You\'re Ready!',
+    body: 'Try the quickstart wizard (axon quickstart), explore templates (axon new --template), or run tests (axon test). Check axon cheatsheet for a one-page reference. Happy building!',
+    selector: null,
+  },
+];
+
+function startTutorial() {
+  tutorialStep = 0;
+  tutorialOverlay.style.display = 'block';
+  renderTutorialStep();
+}
+
+function closeTutorial() {
+  tutorialOverlay.style.display = 'none';
+  if (highlightedEl) {
+    highlightedEl.classList.remove('tutorial-highlight');
+    highlightedEl = null;
+  }
+}
+
+function renderTutorialStep() {
+  const step = TUTORIAL_STEPS[tutorialStep];
+  const total = TUTORIAL_STEPS.length;
+
+  tutorialTitle.textContent = step.title;
+  tutorialBody.textContent = step.body;
+  tutorialStepBadge.textContent = `Step ${tutorialStep + 1} / ${total}`;
+  tutorialPrev.style.visibility = tutorialStep === 0 ? 'hidden' : 'visible';
+  tutorialNext.textContent = tutorialStep === total - 1 ? 'Finish' : 'Next →';
+
+  // Progress dots
+  tutorialProgress.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'tutorial-progress-dot';
+    if (i < tutorialStep) dot.classList.add('done');
+    if (i === tutorialStep) dot.classList.add('active');
+    tutorialProgress.appendChild(dot);
+  }
+
+  // Highlight target element
+  if (highlightedEl) {
+    highlightedEl.classList.remove('tutorial-highlight');
+    highlightedEl = null;
+  }
+
+  if (step.selector) {
+    const el = document.querySelector(step.selector);
+    if (el) {
+      el.classList.add('tutorial-highlight');
+      highlightedEl = el;
+      // Position card near the highlighted element
+      const rect = el.getBoundingClientRect();
+      const cardW = 420;
+      let left = rect.right + 12;
+      let top = rect.top;
+      // Flip to left side if not enough space on right
+      if (left + cardW > window.innerWidth - 16) {
+        left = rect.left - cardW - 12;
+      }
+      // If not enough space on left either, place below
+      if (left < 16) {
+        left = Math.max(16, rect.left);
+        top = rect.bottom + 12;
+      }
+      // Clamp vertically
+      if (top + 250 > window.innerHeight - 16) {
+        top = Math.max(16, window.innerHeight - 270);
+      }
+      tutorialCard.style.left = left + 'px';
+      tutorialCard.style.top = top + 'px';
+    } else {
+      tutorialCard.style.left = '50%';
+      tutorialCard.style.top = '50%';
+      tutorialCard.style.transform = 'translate(-50%, -50%)';
+    }
+  } else {
+    tutorialCard.style.left = '50%';
+    tutorialCard.style.top = '50%';
+    tutorialCard.style.transform = 'translate(-50%, -50%)';
+  }
+
+  // Execute action (e.g. switch tab)
+  if (step.action) {
+    setTimeout(() => step.action(), 100);
+  }
+}
+
+tutorialBtn.addEventListener('click', startTutorial);
+tutorialClose.addEventListener('click', closeTutorial);
+tutorialSkip.addEventListener('click', closeTutorial);
+
+tutorialNext.addEventListener('click', () => {
+  if (tutorialStep < TUTORIAL_STEPS.length - 1) {
+    tutorialStep++;
+    renderTutorialStep();
+  } else {
+    closeTutorial();
+  }
+});
+
+tutorialPrev.addEventListener('click', () => {
+  if (tutorialStep > 0) {
+    tutorialStep--;
+    renderTutorialStep();
+  }
+});
+
+// Auto-start tutorial on first visit
+(function autoStartTutorial() {
+  if (!localStorage.getItem('axon-tutorial-seen')) {
+    localStorage.setItem('axon-tutorial-seen', '1');
+    setTimeout(startTutorial, 800);
+  }
+})();

@@ -724,3 +724,100 @@ select {
   overflow: auto;
   font-size: 12px;
 }
+
+/* Tutorial overlay */
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+.tutorial-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  pointer-events: auto;
+  transition: opacity .2s;
+}
+.tutorial-card {
+  position: absolute;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0;
+  max-width: 420px;
+  min-width: 340px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  pointer-events: auto;
+  transition: top .25s ease, left .25s ease;
+  z-index: 10001;
+}
+.tutorial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.tutorial-step-badge {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tutorial-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.tutorial-close:hover { color: var(--text); }
+.tutorial-title {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 16px 4px;
+  color: var(--text);
+}
+.tutorial-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+  padding: 0 16px 12px;
+}
+.tutorial-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px;
+  justify-content: flex-end;
+}
+.tutorial-actions .btn { font-size: 12px; padding: 4px 12px; }
+.tutorial-progress {
+  display: flex;
+  gap: 4px;
+  padding: 0 16px 12px;
+}
+.tutorial-progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background .2s;
+}
+.tutorial-progress-dot.active {
+  background: var(--accent);
+}
+.tutorial-progress-dot.done {
+  background: var(--success);
+}
+.tutorial-highlight {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.5) !important;
+  z-index: 9999 !important;
+  position: relative !important;
+}
