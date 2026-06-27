@@ -107,6 +107,12 @@ def parse(source: str, parse_expressions: bool = False) -> list:
             annotations = []
             continue
 
+        # Skip test blocks (parsed separately by axon.testing).
+        if _starts_keyword(source, pos, "test"):
+            pos = _skip_test_block(source, pos)
+            annotations = []
+            continue
+
         raise SyntaxError(
             f"Unexpected token at line {_current_line(source, pos)}: {source[pos:pos + 20]}"
         )
@@ -1449,3 +1455,22 @@ def _starts_field(source: str, pos: int, field_name: str) -> bool:
 def _current_line(source: str, pos: int) -> int:
     safe_pos = max(0, min(pos, len(source)))
     return source.count("\n", 0, safe_pos) + 1
+
+
+def _skip_test_block(source: str, pos: int) -> int:
+    """Skip a test block: test "name" { ... }. Returns position after closing brace."""
+    # Find the opening brace
+    brace_pos = source.find("{", pos)
+    if brace_pos == -1:
+        return len(source)
+    # Find matching closing brace
+    depth = 1
+    i = brace_pos + 1
+    length = len(source)
+    while i < length and depth > 0:
+        if source[i] == "{":
+            depth += 1
+        elif source[i] == "}":
+            depth -= 1
+        i += 1
+    return i

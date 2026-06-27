@@ -141,8 +141,14 @@ def run_quickstart(
     try:
         from axon.runtime import RuntimeConfig, execute_runtime
 
-        config = RuntimeConfig(mock=True)
-        output = execute_runtime(ax_content, config=config)
+        config = RuntimeConfig(source_path=ax_path, mock=True)
+        result = execute_runtime(config)
+        if hasattr(result, "is_ok") and result.is_ok():
+            output = result.unwrap()
+        elif hasattr(result, "is_err") and result.is_err():
+            output = f"error: {result.unwrap_err()}"
+        else:
+            output = str(result)
         print(f"  [OK] Agent output: {output}")
     except Exception as e:
         print(f"  [!] Run skipped (mock): {e}")

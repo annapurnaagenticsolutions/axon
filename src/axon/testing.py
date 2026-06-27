@@ -85,6 +85,36 @@ def _parse_assertions(body: str) -> list[dict[str, str]]:
     return assertions
 
 
+def _extract_run_args(expression: str) -> tuple[str | None, dict[str, str]]:
+    """Extract agent name and args from 'AgentName.run(arg1, arg2, ...)' expression.
+
+    Returns (agent_name, args_dict) where args_dict maps positional args to
+    the agent's run() parameter names (inferred as 'arg0', 'arg1', ... or
+    common names like 'q', 'input', 'query').
+    """
+    match = re.match(r'([A-Za-z_][A-Za-z0-9_]*)\.run\s*\(([^)]*)\)', expression)
+    if not match:
+        return None, {}
+    agent_name = match.group(1)
+    args_str = match.group(2).strip()
+    if not args_str:
+        return agent_name, {}
+    # Parse positional arguments (string literals or identifiers)
+    raw_args = [a.strip() for a in args_str.split(",")] if args_str else []
+    # Map to common param names: try 'input' first, then 'q', then positional
+    args_dict = {}
+    for i, a in enumerate(raw_args):
+        # Strip quotes from string literals
+        val = a.strip('"').strip("'")
+        if i == 0:
+            args_dict["input"] = val
+            args_dict["q"] = val
+            args_dict["query"] = val
+        else:
+            args_dict[f"arg{i}"] = val
+    return agent_name, args_dict
+
+
 def run_tests(source: str) -> list[TestResult]:
     """Parse and run test blocks from AXON source.
 
@@ -120,8 +150,9 @@ def run_tests(source: str) -> list[TestResult]:
 
     # Try to execute with mock runtime
     try:
+        import tempfile
+        from pathlib import Path
         from axon.runtime import RuntimeConfig, execute_runtime
-        config = RuntimeConfig(mock=True)
     except ImportError:
         # Runtime not available — mark tests as skipped
         for block in blocks:
@@ -132,37 +163,57 @@ def run_tests(source: str) -> list[TestResult]:
             ))
         return results
 
-    for block in blocks:
-        all_passed = True
-        actual_values = []
-        error_msg = ""
+    # Write source to a temp file for the runtime
+    with tempfile.NamedTemporaryFile(suffix=".ax", mode="w", delete=False, encoding="utf-8") as tmp:
+        tmp.write(source)
+        tmp_path = Path(tmp.name)
 
-        for assertion in block.assertions:
-            expr = assertion["expression"]
-            expected = assertion["expected"]
+    try:
+        for block in blocks:
+            all_passed = True
+            actual_values = []
+            error_msg = ""
 
-            try:
-                # Execute the expression in mock mode
-                actual = str(execute_runtime(source, config=config, expression=expr))
-                actual_values.append(actual)
+            for assertion in block.assertions:
+                expr = assertion["expression"]
+                expected = assertion["expected"]
 
-                if not _values_equal(actual, expected):
+                try:
+                    agent_name, run_args = _extract_run_args(expr)
+                    config = RuntimeConfig(
+                        source_path=tmp_path,
+                        mock=True,
+                        args=run_args,
+                        agent_name=agent_name,
+                    )
+                    result = execute_runtime(config)
+                    if hasattr(result, "is_ok") and result.is_ok():
+                        actual = str(result.unwrap())
+                    elif hasattr(result, "is_err") and result.is_err():
+                        actual = f"error: {result.unwrap_err()}"
+                    else:
+                        actual = str(result)
+                    actual_values.append(actual)
+
+                    if not _values_equal(actual, expected):
+                        all_passed = False
+                        error_msg = f"Expected {expected}, got {actual}"
+                        break
+                except Exception as e:
                     all_passed = False
-                    error_msg = f"Expected {expected}, got {actual}"
+                    error_msg = str(e)
+                    actual_values.append("")
                     break
-            except Exception as e:
-                all_passed = False
-                error_msg = str(e)
-                actual_values.append("")
-                break
 
-        results.append(TestResult(
-            name=block.name,
-            passed=all_passed,
-            expected=block.assertions[0]["expected"] if block.assertions else "",
-            actual=actual_values[0] if actual_values else "",
-            error=error_msg,
-        ))
+            results.append(TestResult(
+                name=block.name,
+                passed=all_passed,
+                expected=block.assertions[0]["expected"] if block.assertions else "",
+                actual=actual_values[0] if actual_values else "",
+                error=error_msg,
+            ))
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
     return results
 
