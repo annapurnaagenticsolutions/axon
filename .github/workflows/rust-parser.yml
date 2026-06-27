@@ -167,7 +167,7 @@ jobs:
         working-directory: axon-parser
         run: |
           pip install target/wheels/*.whl --force-reinstall --no-deps
-          python -c "import axon_parser; print(axon_parser.parse_axon('agent A { model: @mock/gpt fn run() -> Str { \"hi\" } }'))"
+          python -c "import axon_parser; print(axon_parser.parse_axon('agent A {\n    model: @mock/gpt\n    fn run() -> Str { \"hi\" }\n}'))"
 
   benchmark:
     name: Performance Benchmark
