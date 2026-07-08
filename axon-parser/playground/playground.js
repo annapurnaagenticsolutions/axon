@@ -1191,16 +1191,16 @@ initWasm();
 // ---------------------------------------------------------------------------
 (function initTheme() {
   const saved = localStorage.getItem('axon-theme');
-  if (saved === 'light') {
-    document.documentElement.classList.add('light');
-    themeBtn.textContent = '\u{2600}';
+  if (saved === 'dark') {
+    document.documentElement.classList.add('dark');
+    themeBtn.textContent = '\u{1F319}';
   }
 })();
 
 themeBtn.addEventListener('click', () => {
-  const isLight = document.documentElement.classList.toggle('light');
-  themeBtn.textContent = isLight ? '\u{2600}' : '\u{1F319}';
-  localStorage.setItem('axon-theme', isLight ? 'light' : 'dark');
+  const isDark = document.documentElement.classList.toggle('dark');
+  themeBtn.textContent = isDark ? '\u{1F319}' : '\u{2600}';
+  localStorage.setItem('axon-theme', isDark ? 'dark' : 'light');
 });
 
 // ---------------------------------------------------------------------------

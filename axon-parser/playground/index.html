@@ -3,133 +3,333 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AXON Playground — Parse, Validate, Generate</title>
-<meta name="description" content="AXON Playground — parse, validate, and generate Go, Rust, TypeScript, and MCP server code from AXON agent definitions.">
-<link rel="stylesheet" href="playground.css">
+<title>AXON — The Programming Language for AI Agents</title>
+<meta name="description" content="A typed DSL for defining AI agents. Write agents in .ax files, compile to Python, TypeScript, Go, Rust, and MCP servers. Open source. MIT licensed.">
+<style>
+:root {
+  --bg: #ffffff;
+  --surface: #f6f8fa;
+  --surface-2: #eef1f5;
+  --text: #1f2328;
+  --text-dim: #656d76;
+  --accent: #7c5cff;
+  --accent-2: #00a87e;
+  --border: #d0d7de;
+  --code-bg: #f6f8fa;
+  --kw: #cf222e;
+  --type: #0550ae;
+  --str: #0a3069;
+  --fn: #8250df;
+  --comment: #656d76;
+  --ann: #0550ae;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+}
+.container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Nav */
+.nav {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+.nav-inner { display: flex; align-items: center; justify-content: space-between; }
+.nav-brand { font-weight: 700; font-size: 17px; color: var(--accent); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a { color: var(--text-dim); font-size: 14px; font-weight: 500; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+.nav-cta {
+  padding: 8px 18px; border-radius: 8px;
+  background: var(--accent); color: #fff !important;
+  font-weight: 600; font-size: 14px;
+}
+
+/* Hero */
+.hero { text-align: center; padding: 100px 0 64px; }
+.hero h1 {
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1.05; margin-bottom: 20px;
+}
+.hero h1 .grad {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero .tagline {
+  font-size: clamp(18px, 2.5vw, 24px);
+  color: var(--text-dim); margin-bottom: 40px; max-width: 640px; margin-left: auto; margin-right: auto;
+}
+.hero .cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 13px 28px; border-radius: 10px;
+  font-weight: 600; font-size: 15px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text); text-decoration: none; transition: all 0.2s;
+}
+.btn:hover { background: var(--surface); text-decoration: none; }
+.btn.primary {
+  background: var(--accent); border: none; color: #fff;
+}
+.btn.primary:hover { opacity: 0.92; }
+
+/* Stats bar */
+.stats-bar {
+  display: flex; justify-content: center; gap: 48px;
+  padding: 32px 0; border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.stat { text-align: center; }
+.stat .num { font-size: 2rem; font-weight: 700; color: var(--accent); }
+.stat .label { color: var(--text-dim); font-size: 13px; }
+
+/* How it works */
+.section { padding: 72px 0; }
+.section h2 {
+  font-size: clamp(28px, 4vw, 40px);
+  text-align: center; margin-bottom: 48px; letter-spacing: -0.02em;
+}
+.steps {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+}
+.step {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 32px; text-align: center;
+}
+.step-num {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(124,92,255,0.10); color: var(--accent);
+  display: grid; place-items: center; font-weight: 700; font-size: 18px;
+  margin: 0 auto 16px;
+}
+.step h3 { font-size: 1.15rem; margin-bottom: 8px; }
+.step p { color: var(--text-dim); font-size: 14px; }
+
+/* Features */
+.features {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+.feature {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px;
+}
+.feature h3 { font-size: 1.05rem; margin-bottom: 8px; color: var(--accent); }
+.feature p { color: var(--text-dim); font-size: 14px; }
+.feature code {
+  font-family: "SF Mono", "Fira Code", monospace;
+  background: rgba(0,0,0,0.05); padding: 2px 6px;
+  border-radius: 4px; font-size: 0.85em; color: var(--accent);
+}
+
+/* Code example */
+.code-section { padding: 64px 0; }
+.terminal {
+  max-width: 720px; margin: 0 auto;
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+}
+.terminal-header {
+  background: var(--surface); padding: 10px 16px;
+  display: flex; gap: 8px; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+.terminal-title { margin-left: 8px; color: var(--text-dim); font-size: 13px; }
+.terminal pre {
+  padding: 24px; overflow-x: auto;
+  font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
+  font-size: 13px; line-height: 1.8; color: var(--text);
+}
+.terminal .kw { color: var(--kw); }
+.terminal .type { color: var(--type); }
+.terminal .str { color: var(--str); }
+.terminal .fn { color: var(--fn); }
+.terminal .comment { color: var(--comment); }
+.terminal .ann { color: var(--ann); }
+.terminal .cmd { color: var(--text-dim); }
+
+/* CTA bottom */
+.cta-bottom {
+  text-align: center; padding: 72px 0;
+  border-top: 1px solid var(--border);
+}
+.cta-bottom h2 { margin-bottom: 16px; }
+.cta-bottom p { color: var(--text-dim); margin-bottom: 28px; }
+
+/* Footer */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 0; color: var(--text-dim); font-size: 14px;
+}
+.footer-inner { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.footer-links { display: flex; gap: 20px; }
+.footer-links a { color: var(--text-dim); }
+.footer-links a:hover { color: var(--text); }
+
+@media (max-width: 768px) {
+  .steps, .features { grid-template-columns: 1fr; }
+  .nav-links { gap: 14px; }
+  .nav-links a:not(.nav-cta) { display: none; }
+}
+</style>
 </head>
 <body>
-  <header class="toolbar">
-    <div class="toolbar-left">
-      <span class="logo">⚡ AXON Playground</span>
-      <select id="exampleSelect">
-        <option value="hello">hello.ax — Basic agent</option>
-        <option value="hello_run">hello_run.ax — Tool call</option>
-        <option value="versioned">versioned.ax — Versioned agent</option>
-        <option value="permissions">permissions.ax — @permission sandbox</option>
-        <option value="type_alias">type_alias.ax — Type aliases</option>
-        <option value="flow">flow.ax — Flow pipeline</option>
-        <option value="rag">rag.ax — RAG + prompts</option>
-        <option value="customer_support">customer_support.ax — Full example</option>
-        <option value="custom">Custom…</option>
-      </select>
-    </div>
-    <div class="toolbar-right">
-      <span class="wasm-badge" id="wasmBadge">Checking WASM…</span>
-      <button id="shareBtn" class="btn" title="Copy shareable URL">Share</button>
-      <button id="tutorialBtn" class="btn" title="Start interactive tutorial">📖 Tutorial</button>
-      <button id="themeBtn" class="btn" title="Toggle theme">🌙</button>
-      <button id="parseBtn" class="btn primary" disabled>Parse</button>
-      <button id="copyBtn" class="btn">Copy Output</button>
-      <button id="downloadBtn" class="btn">Download</button>
-      <button id="downloadAllBtn" class="btn" title="Download all targets as ZIP">ZIP</button>
-      <input type="text" id="meshUrlInput" class="mesh-url-input" value="http://localhost:8000" placeholder="Mesh URL" title="AgentOps Mesh API URL">
-    </div>
-  </header>
 
-  <main class="workspace">
-    <div class="panel source-panel">
-      <div class="panel-header">
-        <div class="file-tabs" id="fileTabs"></div>
-        <div class="file-tab-actions">
-          <button id="addFileBtn" class="btn btn-sm" title="Add file">+</button>
-          <button id="removeFileBtn" class="btn btn-sm" title="Remove file">−</button>
-        </div>
-        <span class="panel-meta" id="sourceMeta">0 lines</span>
-      </div>
-      <div class="editor-wrap">
-        <div class="line-numbers" id="lineNumbers">1</div>
-        <textarea id="source" spellcheck="false" placeholder="Type or paste AXON source here…"></textarea>
-      </div>
-    </div>
-
-    <div class="resizer" id="resizer"></div>
-
-    <div class="panel output-panel">
-      <div class="panel-header">
-        <div class="tabs">
-          <button class="tab active" data-tab="ir">IR JSON</button>
-          <button class="tab" data-tab="ast">AST</button>
-          <button class="tab" data-tab="validate">Validate</button>
-          <button class="tab" data-tab="go">Go</button>
-          <button class="tab" data-tab="rust">Rust</button>
-          <button class="tab" data-tab="ts">TypeScript</button>
-          <button class="tab" data-tab="mcp">MCP</button>
-          <button class="tab" data-tab="expr">Expr Eval</button>
-          <button class="tab" data-tab="govern">Govern</button>
-        </div>
-        <span class="panel-meta" id="outputMeta">AxonIR v0.2</span>
-      </div>
-      <pre id="output" class="json-view"><code class="placeholder">Click <strong>Parse</strong> to generate IR JSON…</code></pre>
-      <div id="astTree" class="ast-tree-view" style="display:none;"></div>
-    </div>
-  </main>
-
-  <section class="expr-panel" id="exprPanel" style="display:none;">
-    <div class="expr-header">
-      <span class="panel-title">Expression Evaluator</span>
-      <button id="evalBtn" class="btn primary">Evaluate</button>
-    </div>
-    <div class="expr-body">
-      <div class="expr-input-group">
-        <label>Expression</label>
-        <input type="text" id="exprInput" placeholder="e.g. 1 + 2 * 3" spellcheck="false">
-      </div>
-      <div class="expr-input-group">
-        <label>Scope (JSON)</label>
-        <input type="text" id="scopeInput" placeholder='e.g. {"x": 10, "y": 20}' spellcheck="false">
-      </div>
-      <div class="expr-input-group">
-        <label>Max Depth</label>
-        <input type="number" id="depthInput" value="100" min="1" max="10000" style="width:80px;">
-      </div>
-      <div class="expr-examples">
-        <button class="expr-example-btn" data-expr="1 + 2 * 3">1 + 2 * 3</button>
-        <button class="expr-example-btn" data-expr='if x > 5 { "big" } else { "small" }' data-scope='{"x": 10}'>if x > 5</button>
-        <button class="expr-example-btn" data-expr="for i in [1,2,3] { i * 2 }">for loop</button>
-        <button class="expr-example-btn" data-expr='let a = 5; let b = 3; a * b'>let bindings</button>
-      </div>
-    </div>
-  </section>
-
-  <section class="govern-panel" id="governPanel" style="display:none;">
-    <div class="govern-header">
-      <span class="panel-title">Submit to AgentOps Mesh</span>
-      <button id="governSubmitBtn" class="btn primary">Submit to Governance</button>
-    </div>
-  </section>
-
-  <footer class="status-bar" id="statusBar">
-    <span id="statusText">Ready — AXON Playground</span>
-  </footer>
-
-  <script type="module" src="playground.js"></script>
-
-  <div id="tutorialOverlay" class="tutorial-overlay" style="display:none;">
-    <div class="tutorial-backdrop"></div>
-    <div class="tutorial-card" id="tutorialCard">
-      <div class="tutorial-header">
-        <span class="tutorial-step-badge" id="tutorialStepBadge">Step 1 / 8</span>
-        <button class="tutorial-close" id="tutorialClose">&times;</button>
-      </div>
-      <h3 class="tutorial-title" id="tutorialTitle">Welcome to AXON Playground</h3>
-      <p class="tutorial-body" id="tutorialBody">Let's take a quick tour of the key features.</p>
-      <div class="tutorial-actions">
-        <button class="btn" id="tutorialPrev">← Back</button>
-        <button class="btn" id="tutorialSkip">Skip</button>
-        <button class="btn primary" id="tutorialNext">Next →</button>
-      </div>
-      <div class="tutorial-progress" id="tutorialProgress"></div>
+<nav class="nav">
+  <div class="container nav-inner">
+    <a href="index.html" class="nav-brand">⚡ AXON</a>
+    <div class="nav-links">
+      <a href="playground.html">Playground</a>
+      <a href="docs.html">Docs</a>
+      <a href="https://github.com/annapurnaagenticsolutions/axon">GitHub</a>
+      <a href="playground.html" class="nav-cta">Try Playground</a>
     </div>
   </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <h1>Write agents in a <span class="grad">typed DSL</span>.<br>Compile to production.</h1>
+    <p class="tagline">AXON is a programming language where agents, tools, memory, RAG, and flows are first-class constructs — not framework boilerplate.</p>
+    <div class="cta">
+      <a href="playground.html" class="btn primary">⚡ Try Playground — No Install</a>
+      <a href="docs.html" class="btn">Read Docs</a>
+      <a href="https://github.com/annapurnaagenticsolutions/axon" class="btn">GitHub</a>
+    </div>
+  </div>
+</section>
+
+<section class="stats-bar container">
+  <div class="stat"><div class="num">5</div><div class="label">Compile Targets</div></div>
+  <div class="stat"><div class="num">8+</div><div class="label">Built-in Examples</div></div>
+  <div class="stat"><div class="num">MIT</div><div class="label">Licensed</div></div>
+  <div class="stat"><div class="num">0</div><div class="label">Install Required</div></div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Write .ax files</h3>
+        <p>Define agents with typed tools, memory, RAG, and multi-agent flows in a clean DSL. No framework boilerplate.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Compile</h3>
+        <p>Parse, validate, and type-check. Generate Python, TypeScript, Go, Rust, or MCP server code from one source.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Deploy</h3>
+        <p>Run compiled agents anywhere. Submit to AgentOps Mesh for governance review before production.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top: 0;">
+  <div class="container">
+    <h2>Everything you need to build agents</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>Native Agent Primitives</h3>
+        <p><code>spawn</code>, <code>pause</code>, <code>resume</code>, <code>terminate</code> are first-class language constructs, not library calls.</p>
+      </div>
+      <div class="feature">
+        <h3>Type-Safe Tooling</h3>
+        <p>Define tools with typed inputs and outputs. The compiler validates tool-agent compatibility before runtime.</p>
+      </div>
+      <div class="feature">
+        <h3>Multi-Target Compilation</h3>
+        <p>One <code>.ax</code> file compiles to TypeScript, Python, Go, Rust, and MCP servers. One source, multiple runtimes.</p>
+      </div>
+      <div class="feature">
+        <h3>RAG Built In</h3>
+        <p>First-class <code>rag</code> declarations with chunking, embedding, and vector search — no external glue code.</p>
+      </div>
+      <div class="feature">
+        <h3>Flows & Pools</h3>
+        <p>Define multi-stage pipelines with <code>flow</code> and parallel agent pools with <code>pool</code>. Orchestration as code.</p>
+      </div>
+      <div class="feature">
+        <h3>Governance Ready</h3>
+        <p>Submit agents to <a href="https://annapurnaagenticsolutions.github.io/open-enterprise-agentops-mesh/unified.html">AgentOps Mesh</a> for 9-gate governance review — directly from the playground.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="code-section">
+  <div class="container">
+    <h2 style="text-align:center; margin-bottom: 32px;">See it in action</h2>
+    <div class="terminal">
+      <div class="terminal-header">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span class="terminal-title">research_pipeline.ax</span>
+      </div>
+      <pre><code><span class="comment">/// Multi-agent research pipeline in AXON</span>
+<span class="kw">agent</span> <span class="type">ResearchCoordinator</span> {
+    <span class="ann">model</span>: <span class="str">@anthropic/claude-4</span>
+    <span class="ann">tools</span>: [<span class="type">WebSearch</span>, <span class="type">ResearchDocs.retrieve</span>]
+
+    <span class="kw">fn</span> <span class="fn">run</span>(<span class="type">query</span>: <span class="type">ResearchQuery</span>) <span class="kw">-></span> <span class="type">Result</span>&lt;<span class="type">ResearchReport</span>, <span class="type">AgentError</span>&gt; {
+        <span class="kw">let</span> planner = <span class="fn">spawn</span> <span class="type">QueryPlanner</span>()
+        <span class="kw">let</span> plan = <span class="kw">await</span> planner.<span class="fn">plan</span>(query)?
+
+        <span class="kw">let</span> pool = <span class="fn">pool</span>(<span class="type">size</span>: <span class="str">3</span>, <span class="type">target</span>: <span class="type">ResearchAgent</span>)
+        <span class="kw">let</span> results = []
+        <span class="kw">for</span> sub <span class="kw">in</span> plan {
+            results = results + (<span class="kw">await</span> pool.<span class="fn">investigate</span>(sub)?)
+        }
+
+        <span class="kw">let</span> summary = <span class="kw">await</span> <span class="fn">spawn</span> <span class="type">SummarizerAgent</span>().<span class="fn">summarize</span>(results)?
+        <span class="fn">Ok</span>(<span class="type">ResearchReport</span> { topic: query.topic, summary })
+    }
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<section class="cta-bottom">
+  <div class="container">
+    <h2>Start in 30 seconds — no install</h2>
+    <p>Open the playground in your browser. Parse, validate, and generate code from AXON agents.</p>
+    <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+      <a href="playground.html" class="btn primary">⚡ Try Playground</a>
+      <a href="docs.html" class="btn">Read Docs</a>
+      <a href="https://annapurnaagenticsolutions.github.io/open-enterprise-agentops-mesh/unified.html" class="btn">AXON + Mesh Demo</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <span>AXON — The programming language for autonomous agents. MIT Licensed.</span>
+    <div class="footer-links">
+      <a href="playground.html">Playground</a>
+      <a href="docs.html">Docs</a>
+      <a href="https://github.com/annapurnaagenticsolutions/axon">GitHub</a>
+      <a href="https://annapurnaagenticsolutions.github.io/open-enterprise-agentops-mesh/unified.html">AXON + Mesh</a>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>

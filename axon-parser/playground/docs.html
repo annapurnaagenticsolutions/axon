@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXON Docs — Language Reference, Examples & CLI</title>
+<meta name="description" content="AXON documentation: getting started, language syntax, examples, CLI reference, and code generation targets.">
+<style>
+:root {
+  --bg: #ffffff;
+  --surface: #f6f8fa;
+  --surface-2: #eef1f5;
+  --text: #1f2328;
+  --text-dim: #656d76;
+  --accent: #7c5cff;
+  --accent-2: #0550ae;
+  --border: #d0d7de;
+  --code-bg: #f6f8fa;
+  --kw: #cf222e;
+  --type: #0550ae;
+  --str: #0a3069;
+  --fn: #8250df;
+  --comment: #656d76;
+  --ann: #0550ae;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Nav */
+.nav {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-brand { font-weight: 700; font-size: 16px; color: var(--accent); }
+.nav-links { display: flex; gap: 20px; }
+.nav-links a { color: var(--text-dim); font-size: 14px; }
+.nav-links a:hover { color: var(--text); text-decoration: none; }
+.nav-links a.active { color: var(--accent); }
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 0;
+}
+.sidebar {
+  position: sticky; top: 56px;
+  height: calc(100vh - 56px);
+  overflow-y: auto;
+  padding: 32px 16px;
+  border-right: 1px solid var(--border);
+}
+.sidebar h4 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-dim); margin: 20px 0 8px; padding-left: 12px;
+}
+.sidebar a {
+  display: block; padding: 6px 12px; border-radius: 6px;
+  color: var(--text-dim); font-size: 14px; margin-bottom: 2px;
+}
+.sidebar a:hover { background: rgba(0,0,0,0.04); color: var(--text); text-decoration: none; }
+.sidebar a.active { background: rgba(124,92,255,0.06); color: var(--accent); }
+
+.content { padding: 40px 48px 80px; max-width: 900px; }
+.content section { margin-bottom: 64px; scroll-margin-top: 80px; }
+.content h2 { font-size: 1.8rem; margin-bottom: 16px; letter-spacing: -0.02em; }
+.content h3 { font-size: 1.2rem; margin: 28px 0 12px; color: var(--accent); }
+.content p { color: var(--text-dim); margin-bottom: 14px; }
+.content ul { color: var(--text-dim); padding-left: 20px; margin-bottom: 14px; }
+.content li { margin-bottom: 6px; }
+.content strong { color: var(--text); }
+
+/* Code blocks */
+.code-block {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  overflow-x: auto;
+  font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  margin: 16px 0;
+}
+.code-block .kw { color: var(--kw); }
+.code-block .type { color: var(--type); }
+.code-block .str { color: var(--str); }
+.code-block .fn { color: var(--fn); }
+.code-block .comment { color: var(--comment); }
+.code-block .ann { color: var(--ann); }
+
+/* Inline code */
+code {
+  font-family: "SF Mono", "Fira Code", monospace;
+  background: rgba(0,0,0,0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+th { color: var(--accent); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; }
+td { color: var(--text-dim); }
+
+/* Callout */
+.callout {
+  background: rgba(124,92,255,0.04);
+  border: 1px solid rgba(124,92,255,0.15);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 16px 0;
+}
+.callout p { margin: 0; color: var(--text); }
+
+/* CTA */
+.cta-box {
+  text-align: center; padding: 48px 24px;
+  border-top: 1px solid var(--border); margin-top: 48px;
+}
+.cta-box .btn {
+  display: inline-block; padding: 12px 28px; border-radius: 8px;
+  font-weight: 600; font-size: 0.95rem; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text); text-decoration: none; margin: 0 8px;
+}
+.cta-box .btn.primary {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .content { padding: 24px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="nav-brand">⚡ AXON</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="playground.html">Playground</a>
+    <a href="docs.html" class="active">Docs</a>
+    <a href="https://github.com/annapurnaagenticsolutions/axon">GitHub</a>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <h4>Getting Started</h4>
+    <a href="#install">Install</a>
+    <a href="#first-agent">Your First Agent</a>
+    <a href="#compile">Compile & Run</a>
+    <h4>Language</h4>
+    <a href="#syntax">Syntax Overview</a>
+    <a href="#agents">Agents</a>
+    <a href="#tools">Tools</a>
+    <a href="#memory">Memory & RAG</a>
+    <a href="#flows">Flows</a>
+    <a href="#types">Type System</a>
+    <h4>CLI Reference</h4>
+    <a href="#cli">All Commands</a>
+    <h4>Code Generation</h4>
+    <a href="#codegen">Targets</a>
+    <h4>Integration</h4>
+    <a href="#governance">AgentOps Mesh</a>
+    <a href="#examples">Examples</a>
+  </aside>
+
+  <main class="content">
+
+    <section id="install">
+      <h2>Install</h2>
+      <p>AXON is available as a Python package and a Rust-based CLI.</p>
+      <div class="code-block"><span class="comment"># Install the Python package</span>
+pip install axon-dsl
+
+<span class="comment"># Verify installation</span>
+axon --version</div>
+      <div class="callout">
+        <p><strong>No install required:</strong> You can try AXON in the <a href="playground.html">browser playground</a> — no Python, no API key, no setup.</p>
+      </div>
+    </section>
+
+    <section id="first-agent">
+      <h2>Your First Agent</h2>
+      <p>An AXON agent is defined in a <code>.ax</code> file. Here's the simplest possible agent:</p>
+      <div class="code-block"><span class="comment">/// hello.ax — A basic agent</span>
+<span class="kw">agent</span> <span class="type">Hello</span> {
+    <span class="ann">model</span>: <span class="str">@mock/model</span>
+    <span class="kw">fn</span> <span class="fn">run</span>(name: <span class="type">Str</span>) <span class="kw">-></span> <span class="type">Str</span> {
+        <span class="str">"Hello, "</span> + name
+    }
+}</div>
+      <p>Run it with mock mode (no LLM API key needed):</p>
+      <div class="code-block">axon run hello.ax --arg name=World
+<span class="comment"># Output: Hello, World</span></div>
+    </section>
+
+    <section id="compile">
+      <h2>Compile & Run</h2>
+      <p>AXON compiles to multiple targets from a single source file:</p>
+      <div class="code-block"><span class="comment"># Compile to TypeScript</span>
+axon compile hello.ax --target ts -o hello.ts
+
+<span class="comment"># Compile to Python MCP server</span>
+axon compile hello.ax --target mcp -o hello_server.py
+
+<span class="comment"># Compile to Go</span>
+axon compile hello.ax --target go -o hello.go
+
+<span class="comment"># Compile to Rust</span>
+axon compile hello.ax --target rust -o hello.rs
+
+<span class="comment"># Run with mock mode (no API key)</span>
+axon run hello.ax --mock --arg name=World</div>
+    </section>
+
+    <section id="syntax">
+      <h2>Syntax Overview</h2>
+      <p>AXON uses a clean, typed syntax where agent primitives are first-class language constructs:</p>
+      <table>
+        <tr><th>Construct</th><th>Keyword</th><th>Description</th></tr>
+        <tr><td>Agent</td><td><code>agent</code></td><td>Define an AI agent with model, tools, memory</td></tr>
+        <tr><td>Tool</td><td><code>tool</code></td><td>Declare a callable tool with typed inputs/outputs</td></tr>
+        <tr><td>Flow</td><td><code>flow</code></td><td>Define a multi-step pipeline</td></tr>
+        <tr><td>Memory</td><td><code>memory</code></td><td>Declare episodic or semantic memory</td></tr>
+        <tr><td>RAG</td><td><code>rag</code></td><td>Declare retrieval-augmented generation pipeline</td></tr>
+        <tr><td>Spawn</td><td><code>spawn</code></td><td>Create a new agent instance</td></tr>
+        <tr><td>Pool</td><td><code>pool</code></td><td>Create a pool of parallel agents</td></tr>
+        <tr><td>Permission</td><td><code>@permission</code></td><td>Declare sandbox permissions</td></tr>
+      </table>
+
+      <h3>Keywords</h3>
+      <table>
+        <tr><th>Keyword</th><th>Context</th></tr>
+        <tr><td><code>import</code></td><td>Module import</td></tr>
+        <tr><td><code>type</code></td><td>Type alias declaration</td></tr>
+        <tr><td><code>tool</code></td><td>Tool declaration</td></tr>
+        <tr><td><code>prompt</code></td><td>Prompt template declaration</td></tr>
+        <tr><td><code>rag</code></td><td>RAG knowledge base declaration</td></tr>
+        <tr><td><code>flow</code></td><td>Flow orchestration declaration</td></tr>
+        <tr><td><code>agent</code></td><td>Agent declaration</td></tr>
+        <tr><td><code>fn</code></td><td>Method declaration inside agents</td></tr>
+        <tr><td><code>stage</code></td><td>Stage declaration inside flows</td></tr>
+        <tr><td><code>let</code></td><td>Variable binding</td></tr>
+        <tr><td><code>for</code></td><td>Loop</td></tr>
+        <tr><td><code>if</code></td><td>Conditional</td></tr>
+        <tr><td><code>match</code></td><td>Pattern match</td></tr>
+        <tr><td><code>act</code></td><td>Tool invocation</td></tr>
+        <tr><td><code>think</code></td><td>Reasoning trace</td></tr>
+        <tr><td><code>observe</code></td><td>Observation logging</td></tr>
+        <tr><td><code>store</code></td><td>Memory write</td></tr>
+        <tr><td><code>spawn</code></td><td>Agent instantiation</td></tr>
+        <tr><td><code>await</code></td><td>Async wait</td></tr>
+        <tr><td><code>pool</code></td><td>Worker pool creation</td></tr>
+        <tr><td><code>Ok</code></td><td>Success result constructor</td></tr>
+      </table>
+
+      <h3>Operators</h3>
+      <table>
+        <tr><th>Operator</th><th>Purpose</th></tr>
+        <tr><td><code>-&gt;</code></td><td>Return type arrow, flow stage connection</td></tr>
+        <tr><td><code>|&gt;</code></td><td>Pipeline forward</td></tr>
+        <tr><td><code>?</code></td><td>Error propagation</td></tr>
+        <tr><td><code>@</code></td><td>Annotation prefix, model reference</td></tr>
+        <tr><td><code>::</code></td><td>Namespace / enum access</td></tr>
+        <tr><td><code>|</code></td><td>Union type separator</td></tr>
+      </table>
+
+      <h3>Comments</h3>
+      <table>
+        <tr><th>Syntax</th><th>Purpose</th></tr>
+        <tr><td><code>// text</code></td><td>Line comment — ignored by parser</td></tr>
+        <tr><td><code>/// text</code></td><td>Doc comment — attached to declaration as documentation</td></tr>
+      </table>
+
+      <h3>String Interpolation</h3>
+      <p>Strings support <code>{variable}</code> interpolation. Prefix with <code>f</code> for explicit interpolation:</p>
+      <div class="code-block"><span class="str">"Hello, {name}!"</span>
+<span class="fn">f</span><span class="str">"Found {len(results)} results for: {query}"</span></div>
+    </section>
+
+    <section id="agents">
+      <h2>Agents</h2>
+      <p>Agents are the core construct. They have a model, optional tools, memory, and functions:</p>
+      <div class="code-block"><span class="kw">agent</span> <span class="type">ResearchBot</span> {
+    <span class="ann">model</span>: <span class="str">@anthropic/claude-4</span>
+    <span class="ann">tools</span>: [<span class="type">WebSearch</span>, <span class="type">DocStore.retrieve</span>]
+    <span class="ann">memory</span>: episodic
+
+    <span class="kw">fn</span> <span class="fn">run</span>(query: <span class="type">Str</span>) <span class="kw">-></span> <span class="type">Result</span>&lt;<span class="type">Report</span>, <span class="type">AgentError</span>&gt; {
+        <span class="kw">let</span> results = <span class="kw">await</span> <span class="type">WebSearch</span>.<span class="fn">search</span>(query)?
+        <span class="fn">Ok</span>(<span class="type">Report</span> { topic: query, findings: results })
+    }
+}</div>
+    </section>
+
+    <section id="tools">
+      <h2>Tools</h2>
+      <p>Tools are typed functions that agents can call. The compiler validates tool-agent compatibility:</p>
+      <div class="code-block"><span class="kw">tool</span> <span class="type">WebSearch</span> {
+    <span class="ann">input</span>: { query: <span class="type">Str</span>, max_results: <span class="type">Int</span> }
+    <span class="ann">output</span>: { results: [<span class="type">SearchResult</span>] }
+    <span class="ann">scope</span>: <span class="str">"web:read"</span>
+}</div>
+    </section>
+
+    <section id="memory">
+      <h2>Memory & RAG</h2>
+      <p>Memory and RAG are first-class declarations, not imported libraries:</p>
+      <div class="code-block"><span class="kw">agent</span> <span class="type">SupportAgent</span> {
+    <span class="ann">model</span>: <span class="str">@openai/gpt-4o</span>
+    <span class="ann">memory</span>: episodic
+    <span class="ann">rag</span>: <span class="type">DocStore</span> {
+        source: <span class="str">"./docs/"
+        chunk_size: 512
+        embed: <span class="str">"text-embedding-3-small"</span>
+        top_k: 5
+    }
+}</div>
+    </section>
+
+    <section id="flows">
+      <h2>Flows</h2>
+      <p>Flows define multi-step pipelines with typed stages:</p>
+      <div class="code-block"><span class="kw">flow</span> <span class="type">ResearchPipeline</span> {
+    <span class="kw">stage</span> Plan: <span class="type">QueryPlanner</span>.plan
+    <span class="kw">stage</span> Investigate: <span class="fn">pool</span>(size: 3, target: <span class="type">ResearchAgent</span>)
+    <span class="kw">stage</span> Summarize: <span class="type">Summarizer</span>.summarize
+    <span class="kw">stage</span> Verify: <span class="type">FactChecker</span>.verify_all
+}</div>
+    </section>
+
+    <section id="types">
+      <h2>Type System</h2>
+      <p>AXON has a static type system. The compiler catches type errors before runtime.</p>
+
+      <h3>Primitive Types</h3>
+      <table>
+        <tr><th>Type</th><th>Description</th></tr>
+        <tr><td><code>Str</code></td><td>String</td></tr>
+        <tr><td><code>Int</code></td><td>Integer</td></tr>
+        <tr><td><code>Float</code></td><td>Floating-point number</td></tr>
+        <tr><td><code>Bool</code></td><td>Boolean</td></tr>
+        <tr><td><code>()</code></td><td>Unit (no value)</td></tr>
+      </table>
+
+      <h3>Composite Types</h3>
+      <table>
+        <tr><th>Syntax</th><th>Description</th></tr>
+        <tr><td><code>List&lt;T&gt;</code></td><td>List of type T</td></tr>
+        <tr><td><code>Result&lt;T, E&gt;</code></td><td>Success (<code>Ok(T)</code>) or error (<code>Err(E)</code>)</td></tr>
+        <tr><td><code>Option&lt;T&gt;</code></td><td>Present or absent</td></tr>
+        <tr><td><code>Dict&lt;K, V&gt;</code></td><td>Key-value mapping</td></tr>
+        <tr><td><code>{ field: T, ... }</code></td><td>Record type</td></tr>
+      </table>
+
+      <h3>Union Types</h3>
+      <p>Discriminated unions via <code>|</code>:</p>
+      <div class="code-block"><span class="kw">type</span> <span class="type">Priority</span> = <span class="str">"low"</span> | <span class="str">"medium"</span> | <span class="str">"high"</span>
+<span class="kw">type</span> <span class="type">Verdict</span> = <span class="str">"confirmed"</span> | <span class="str">"plausible"</span> | <span class="str">"disputed"</span> | <span class="str">"unverified"</span></div>
+
+      <h3>Generic Type Parameters</h3>
+      <div class="code-block"><span class="kw">type</span> <span class="type">PagedList</span>&lt;<span class="type">T</span>&gt; = {
+    items: <span class="type">List</span>&lt;<span class="type">T</span>&gt;,
+    total: <span class="type">Int</span>,
+    page: <span class="type">Int</span>
+}</div>
+
+      <h3>Default Values</h3>
+      <p>Parameters may have default values:</p>
+      <div class="code-block"><span class="kw">tool</span> <span class="type">Search</span>(query: <span class="type">Str</span>, max_results: <span class="type">Int</span> = <span class="str">5</span>) <span class="kw">-></span> <span class="type">Result</span>&lt;<span class="type">List</span>&lt;<span class="type">Str</span>&gt;, <span class="type">ToolError</span>&gt; { ... }</div>
+
+      <h3>Imports</h3>
+      <p>Bring types, tools, or utilities from AXON standard modules into scope:</p>
+      <div class="code-block"><span class="kw">import</span> { <span class="type">Chunk</span> } <span class="kw">from</span> <span class="str">"axon:types"</span>
+<span class="kw">import</span> { now } <span class="kw">from</span> <span class="str">"axon:time"</span>
+<span class="kw">import</span> { <span class="type">WebSearch</span>, <span class="type">WebFetch</span> } <span class="kw">from</span> <span class="str">"axon:tools/web"</span></div>
+    </section>
+
+    <section id="cli">
+      <h2>CLI Reference</h2>
+      <p>AXON ships with a comprehensive CLI. All commands are available after <code>pip install axon-dsl</code>.</p>
+
+      <h3>Core Commands</h3>
+      <table>
+        <tr><th>Command</th><th>Description</th></tr>
+        <tr><td><code>axon parse &lt;file&gt;</code></td><td>Parse .ax file and output IR JSON</td></tr>
+        <tr><td><code>axon validate &lt;file&gt;</code></td><td>Validate .ax file and show diagnostics</td></tr>
+        <tr><td><code>axon compile &lt;file&gt; --target &lt;t&gt;</code></td><td>Compile to ts, go, rust, mcp, or python</td></tr>
+        <tr><td><code>axon run &lt;file&gt; --mock</code></td><td>Run agent in mock mode (no LLM API key)</td></tr>
+        <tr><td><code>axon run &lt;file&gt; --arg k=v</code></td><td>Run agent with arguments</td></tr>
+        <tr><td><code>axon repl [file]</code></td><td>Start interactive REPL</td></tr>
+        <tr><td><code>axon eval "&lt;expr&gt;"</code></td><td>Evaluate an expression</td></tr>
+        <tr><td><code>axon test &lt;file&gt;</code></td><td>Run tests for an .ax file</td></tr>
+        <tr><td><code>axon format &lt;file&gt;</code></td><td>Format .ax file</td></tr>
+        <tr><td><code>axon lsp</code></td><td>Start language server for IDE integration</td></tr>
+      </table>
+
+      <h3>Agent Lifecycle</h3>
+      <table>
+        <tr><th>Command</th><th>Description</th></tr>
+        <tr><td><code>axon agent spawn &lt;file&gt; --name NAME</code></td><td>Spawn a named agent instance</td></tr>
+        <tr><td><code>axon agent pause NAME</code></td><td>Pause a running agent</td></tr>
+        <tr><td><code>axon agent resume NAME</code></td><td>Resume a paused agent</td></tr>
+        <tr><td><code>axon agent terminate NAME</code></td><td>Terminate an agent</td></tr>
+        <tr><td><code>axon agent status NAME</code></td><td>Check agent status</td></tr>
+        <tr><td><code>axon agent list</code></td><td>List all running agents</td></tr>
+        <tr><td><code>axon agent checkpoint NAME</code></td><td>Save agent state snapshot</td></tr>
+        <tr><td><code>axon agent restore NAME --snapshot FILE</code></td><td>Restore agent from snapshot</td></tr>
+      </table>
+
+      <h3>Supervision & Watch</h3>
+      <table>
+        <tr><th>Command</th><th>Description</th></tr>
+        <tr><td><code>axon supervisor start --name NAME --strategy ...</code></td><td>Start a supervisor with restart strategy (one_for_one, one_for_all, rest_for_one)</td></tr>
+        <tr><td><code>axon supervisor stop NAME</code></td><td>Stop a supervisor</td></tr>
+        <tr><td><code>axon supervisor status NAME</code></td><td>Check supervisor status</td></tr>
+        <tr><td><code>axon watch start &lt;file&gt; --name NAME</code></td><td>Start a file watcher agent</td></tr>
+        <tr><td><code>axon watch stop NAME</code></td><td>Stop a watcher</td></tr>
+      </table>
+
+      <h3>Governance & Deployment</h3>
+      <table>
+        <tr><th>Command</th><th>Description</th></tr>
+        <tr><td><code>axon govern &lt;file&gt; --mesh-url URL</code></td><td>Submit agent to AgentOps Mesh for governance</td></tr>
+        <tr><td><code>axon deploy --target docker</code></td><td>Deploy agent as Docker container</td></tr>
+        <tr><td><code>axon ci-template</code></td><td>Generate CI/CD pipeline template</td></tr>
+        <tr><td><code>axon serve-api --port PORT</code></td><td>Start AXON as a REST API server</td></tr>
+      </table>
+
+      <h3>Secrets & Metrics</h3>
+      <table>
+        <tr><th>Command</th><th>Description</th></tr>
+        <tr><td><code>axon secret list</code></td><td>List configured secrets</td></tr>
+        <tr><td><code>axon secret get KEY</code></td><td>Get a secret value</td></tr>
+        <tr><td><code>axon secret set KEY VALUE</code></td><td>Set a secret</td></tr>
+        <tr><td><code>axon secret delete KEY</code></td><td>Delete a secret</td></tr>
+        <tr><td><code>axon metrics show</code></td><td>Show runtime metrics</td></tr>
+        <tr><td><code>axon metrics export --output FILE</code></td><td>Export metrics to file</td></tr>
+      </table>
+
+      <h3>Project & Health</h3>
+      <table>
+        <tr><th>Command</th><th>Description</th></tr>
+        <tr><td><code>axon quickstart [path]</code></td><td>Scaffold a new AXON project</td></tr>
+        <tr><td><code>axon project-info [path]</code></td><td>Show project information</td></tr>
+        <tr><td><code>axon health</code></td><td>Check installation health</td></tr>
+        <tr><td><code>axon deps [path]</code></td><td>Show dependency tree</td></tr>
+        <tr><td><code>axon hygiene [path]</code></td><td>Check project hygiene (gitignore, formatting)</td></tr>
+        <tr><td><code>axon cheatsheet</code></td><td>Print quick reference cheatsheet</td></tr>
+      </table>
+
+      <h3>Provider Configuration</h3>
+      <p>Use <code>--provider</code> flag with <code>axon run</code> or <code>axon agent spawn</code>:</p>
+      <table>
+        <tr><th>Provider</th><th>Flag</th><th>Notes</th></tr>
+        <tr><td>Mock (default)</td><td><code>--provider mock</code></td><td>No API key needed</td></tr>
+        <tr><td>OpenAI</td><td><code>--provider openai</code></td><td>Requires <code>OPENAI_API_KEY</code></td></tr>
+        <tr><td>Anthropic</td><td><code>--provider anthropic</code></td><td>Requires <code>ANTHROPIC_API_KEY</code></td></tr>
+        <tr><td>Groq</td><td><code>--provider groq</code></td><td>Requires <code>GROQ_API_KEY</code></td></tr>
+      </table>
+
+      <h3>Database Configuration</h3>
+      <p>Set <code>AXON_DB_URL</code> for persistent state:</p>
+      <div class="code-block"><span class="comment"># SQLite (default)</span>
+<span class="kw">export</span> AXON_DB_URL=<span class="str">"sqlite:///path/to/axon.db"</span>
+
+<span class="comment"># PostgreSQL</span>
+<span class="kw">export</span> AXON_DB_URL=<span class="str">"postgresql://user:pass@localhost/axon"</span></div>
+    </section>
+
+    <section id="codegen">
+      <h2>Code Generation Targets</h2>
+      <p>One <code>.ax</code> source file compiles to multiple targets:</p>
+      <table>
+        <tr><th>Target</th><th>Flag</th><th>Output</th></tr>
+        <tr><td>TypeScript</td><td><code>--target ts</code></td><td>ES module with typed interfaces</td></tr>
+        <tr><td>Python</td><td><code>--target python</code></td><td>Python module with type hints</td></tr>
+        <tr><td>Go</td><td><code>--target go</code></td><td>Go package with interfaces</td></tr>
+        <tr><td>Rust</td><td><code>--target rust</code></td><td>Rust module with traits</td></tr>
+        <tr><td>MCP Server</td><td><code>--target mcp</code></td><td>FastMCP Python server</td></tr>
+      </table>
+      <div class="callout">
+        <p><strong>Try it in the browser:</strong> The <a href="playground.html">playground</a> supports all codegen targets — no install required.</p>
+      </div>
+    </section>
+
+    <section id="governance">
+      <h2>AgentOps Mesh Integration</h2>
+      <p>AXON agents can be submitted to <a href="https://annapurnaagenticsolutions.github.io/open-enterprise-agentops-mesh/unified.html">AgentOps Mesh</a> for governance review before production:</p>
+      <div class="code-block"><span class="comment"># Submit agent for governance review</span>
+axon govern research_bot.ax --mesh-url http://localhost:8000
+
+<span class="comment"># Or submit from the playground</span>
+<span class="comment"># Click "Govern" tab → "Submit to Governance"</span></div>
+      <p>The governance workflow evaluates the agent through 9 gates: intake, suitability, data, evaluation, policy, approval, runtime, deployment, and launch readiness.</p>
+    </section>
+
+    <section id="examples">
+      <h2>Examples</h2>
+      <p>The playground includes 8 built-in examples:</p>
+      <table>
+        <tr><th>Example</th><th>What it demonstrates</th></tr>
+        <tr><td><code>hello.ax</code></td><td>Basic agent definition</td></tr>
+        <tr><td><code>hello_run.ax</code></td><td>Agent with tool calls</td></tr>
+        <tr><td><code>permissions.ax</code></td><td>@permission sandbox declarations</td></tr>
+        <tr><td><code>type_alias.ax</code></td><td>Custom type aliases</td></tr>
+        <tr><td><code>flow.ax</code></td><td>Multi-stage flow pipeline</td></tr>
+        <tr><td><code>rag.ax</code></td><td>RAG + prompt declarations</td></tr>
+        <tr><td><code>customer_support.ax</code></td><td>Full production example</td></tr>
+      </table>
+      <p>More examples are in the <a href="https://github.com/annapurnaagenticsolutions/axon/tree/main/examples">GitHub repository</a>.</p>
+    </section>
+
+    <div class="cta-box">
+      <h2>Ready to try AXON?</h2>
+      <p style="margin-bottom: 24px;">Open the playground — no install, no API key.</p>
+      <a href="playground.html" class="btn primary">Try Playground</a>
+      <a href="https://github.com/annapurnaagenticsolutions/axon" class="btn">GitHub</a>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

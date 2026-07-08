@@ -1,26 +1,26 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0d1117;
-  --panel-bg: #161b22;
-  --border: #30363d;
-  --text: #c9d1d9;
-  --muted: #8b949e;
-  --accent: #58a6ff;
-  --accent-hover: #79b8ff;
-  --success: #3fb950;
-  --error: #f85149;
-  --warning: #d29922;
-  --keyword: #ff7b72;
-  --string: #a5d6ff;
-  --type: #79c0ff;
-  --comment: #8b949e;
-  --number: #79c0ff;
-  --json-key: #7ee787;
-  --json-string: #a5d6ff;
-  --json-number: #79c0ff;
-  --json-bool: #ff7b72;
-  --json-null: #ff7b72;
+  --bg: #ffffff;
+  --panel-bg: #f6f8fa;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --muted: #656d76;
+  --accent: #0969da;
+  --accent-hover: #218bff;
+  --success: #1a7f37;
+  --error: #cf222e;
+  --warning: #9a6700;
+  --keyword: #cf222e;
+  --string: #0a3069;
+  --type: #0550ae;
+  --comment: #656d76;
+  --number: #0550ae;
+  --json-key: #0a3069;
+  --json-string: #0a3069;
+  --json-number: #0550ae;
+  --json-bool: #cf222e;
+  --json-null: #cf222e;
   --font-mono: "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", monospace;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --toolbar-h: 44px;
@@ -49,7 +49,7 @@ select {
   transition: background .15s;
 }
 .btn:hover { background: var(--border); }
-.btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 500; }
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 500; }
 .btn.primary:hover { background: var(--accent-hover); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 
@@ -206,7 +206,7 @@ select {
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #484f58; }
+::-webkit-scrollbar-thumb:hover { background: #b1bac4; }
 
 /* Expression evaluator panel */
 .expr-panel {
@@ -379,11 +379,11 @@ select {
   white-space: nowrap;
   transition: all 0.15s;
 }
-.file-tab:hover { color: var(--text); background: rgba(255,255,255,.05); }
+.file-tab:hover { color: var(--text); background: rgba(0,0,0,.04); }
 .file-tab.active {
   color: var(--accent);
   border-bottom: 2px solid var(--accent);
-  background: rgba(88,166,255,.08);
+  background: rgba(9,105,218,.06);
 }
 .file-tab.dirty::after { content: " •"; color: var(--warning); }
 .file-tab-actions { display: flex; gap: 4px; margin-right: 8px; }
@@ -394,32 +394,32 @@ select {
   min-width: 24px;
 }
 
-/* ── Light theme ──────────────────────────────────────────────────────────── */
-:root.light {
-  --bg: #ffffff;
-  --panel-bg: #f6f8fa;
-  --border: #d0d7de;
-  --text: #1f2328;
-  --muted: #656d76;
-  --accent: #0969da;
-  --accent-hover: #218bff;
-  --success: #1a7f37;
-  --error: #cf222e;
-  --warning: #9a6700;
-  --keyword: #cf222e;
-  --string: #0a3069;
-  --type: #0550ae;
-  --comment: #656d76;
-  --number: #0550ae;
-  --json-key: #0a3069;
-  --json-string: #0a3069;
-  --json-number: #0550ae;
-  --json-bool: #cf222e;
-  --json-null: #cf222e;
+/* ── Dark theme (toggle) ──────────────────────────────────────────────────── */
+:root.dark {
+  --bg: #0d1117;
+  --panel-bg: #161b22;
+  --border: #30363d;
+  --text: #c9d1d9;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+  --accent-hover: #79b8ff;
+  --success: #3fb950;
+  --error: #f85149;
+  --warning: #d29922;
+  --keyword: #ff7b72;
+  --string: #a5d6ff;
+  --type: #79c0ff;
+  --comment: #8b949e;
+  --number: #79c0ff;
+  --json-key: #7ee787;
+  --json-string: #a5d6ff;
+  --json-number: #79c0ff;
+  --json-bool: #ff7b72;
+  --json-null: #ff7b72;
 }
-:root.light .btn.primary { color: #fff; }
-:root.light .wasm-badge.ready { background: rgba(26,127,55,.12); }
-:root.light .wasm-badge.fallback { background: rgba(9,105,218,.12); }
+:root.dark .btn.primary { color: #000; }
+:root.dark .wasm-badge.ready { background: rgba(63,185,80,.15); }
+:root.dark .wasm-badge.fallback { background: rgba(88,166,255,.15); }
 
 /* ── Mobile responsive ────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
