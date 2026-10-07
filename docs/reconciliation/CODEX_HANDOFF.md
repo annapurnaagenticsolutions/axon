@@ -6,6 +6,8 @@ Use this as the local Codex ExecPlan.
 
 Reconcile AXON and AgentOps Mesh before implementing new product features. Preserve behavior; eliminate architecture/documentation ambiguity.
 
+The target is **not generic portability**. The target is a typed multi-target compiler plus assurance that detects semantic, authority, recovery and side-effect differences across runtimes.
+
 ## Non-negotiable constraints
 
 1. Do not introduce paid SaaS dependencies.
@@ -13,11 +15,14 @@ Reconcile AXON and AgentOps Mesh before implementing new product features. Prese
 3. Do not delete working behavior.
 4. Do not create a third runtime, tracing system, gateway or memory service.
 5. Prefer MCP, A2A and OpenTelemetry.
-6. Any live provider integration must have deterministic fixtures/recordings.
-7. Keep compiler core free from provider SDK dependencies.
-8. Do not make large-scale refactors before the baseline suite passes.
-9. Treat source/tests as stronger evidence than stale documentation.
-10. Record cost implications for every proposed hosted dependency.
+6. Use official MCP/A2A conformance tooling rather than implementing competing protocol TCKs.
+7. Any live provider integration must have deterministic fixtures/recordings.
+8. Keep compiler core free from provider SDK dependencies.
+9. Do not make large-scale refactors before the baseline suite passes.
+10. Treat source/tests as stronger evidence than stale documentation.
+11. Record cost implications for every proposed hosted dependency.
+12. Search the existing AXON/Mesh code and current industry/open-source implementations before adding a new subsystem.
+13. Every target adapter must explicitly report unsupported or lossy semantics; never silently degrade an AXON contract.
 
 ## Workstreams
 
@@ -63,7 +68,14 @@ Draft a versioned Target Adapter ABI:
 
 Map existing native/MCP code to this interface before writing A2A/OpenAI/Cloudflare adapters.
 
-### E — Offline contract
+Add an explicit **semantic-loss report** to the adapter design. An adapter must fail or declare loss when a target cannot preserve an AXON construct.
+
+### E — Protocol conformance integration
+- Map the official MCP conformance suite into the future MCP target test path.
+- Map official A2A Inspector/TCK tooling into the future A2A target test path.
+- Do not implement competing wire-protocol tests unless filling a documented gap.
+
+### F — Offline contract
 Design and test:
 - `--offline`;
 - no network/model calls;
@@ -85,6 +97,7 @@ Also produce:
 - `TARGET_ADAPTER_RFC.md`
 - `TRACE_IR_RFC.md`
 - `MESH_MIGRATION_MAP.md`
+- `PROTOCOL_CONFORMANCE_INTEGRATION.md`
 
 ## Stop condition for Batch 1
 
@@ -95,6 +108,8 @@ Stop when:
 - stale docs are reconciled;
 - canonical ownership is agreed in code/docs;
 - Target Adapter ABI and normalized Trace IR are reviewable;
-- offline execution invariant is specified and tested at architecture level.
+- offline execution invariant is specified and tested at architecture level;
+- official protocol conformance integrations are mapped;
+- differentiation is framed as semantic/authority/recovery assurance, not generic portability.
 
 The next batch begins with A2A target implementation, then OpenAI Agents, then Cloudflare Agents.
