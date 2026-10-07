@@ -1,16 +1,24 @@
 # AXON Target Architecture
 
-Date: 2026-10-05
+Date: 2026-10-07
 
 ## Product thesis
 
-AXON should not compete as another agent framework. It should become a **provider-neutral agent compiler + portability/conformance layer**, with assurance built around authority, protocol, recovery and side-effect correctness.
+AXON should not compete as another agent framework, protocol implementation, generic portability format, or observability product.
+
+It should become a **typed multi-target agent compiler + semantic assurance layer**.
+
+The differentiated contract is:
+
+> **Compile one typed agent contract to multiple runtimes, then prove that meaning, authority, recovery behavior and side effects remain within declared bounds.**
+
+Protocol wire compatibility is delegated to official MCP/A2A conformance suites.
 
 ```text
 .ax source
     |
     v
-Parser -> Type Checker -> Canonical AXON IR
+Parser -> Type Checker -> Canonical AXON Semantic IR
                          |
           +--------------+---------------+
           |              |               |
@@ -29,9 +37,15 @@ Parser -> Type Checker -> Canonical AXON IR
       |          |          |        |      |
       +------------------+------------------+
                          |
+              Protocol conformance gates
+             (official MCP/A2A suites)
+                         |
                  Normalized Trace IR
                          |
                  AXON Assurance
+                         |
+          semantic / authority / recovery /
+             side-effect equivalence
 ```
 
 ## Canonical layers
@@ -46,7 +60,7 @@ Own:
 
 Do not couple this layer to provider SDKs.
 
-### 2. Canonical AXON IR
+### 2. Canonical AXON Semantic IR
 IR must describe semantics, not one framework implementation:
 - agents and callable methods;
 - tools and typed inputs/outputs;
@@ -57,7 +71,10 @@ IR must describe semantics, not one framework implementation:
 - approvals;
 - budgets;
 - lifecycle/recovery expectations;
-- observable events.
+- observable events;
+- declared side effects and idempotency expectations where relevant.
+
+The IR is the foundation of AXON's differentiation. "Portable JSON" alone is not.
 
 ### 3. Portable IR extensions
 
@@ -83,7 +100,7 @@ IR must describe semantics, not one framework implementation:
 - authority/scope;
 - retention/expiry.
 
-Do not build a standalone Context OS product yet; first make these semantics useful inside portability and assurance.
+Do not build a standalone Context OS product yet; first make these semantics useful inside compilation and assurance.
 
 ### 4. Target Adapter ABI
 
@@ -102,7 +119,17 @@ Initial adapters:
 4. OpenAI Agents API;
 5. Cloudflare Agents.
 
-### 5. Normalized Trace IR
+An adapter must declare unsupported/lossy semantics explicitly; silent semantic degradation is a failure.
+
+### 5. Protocol conformance gate
+
+Do not recreate official protocol TCKs.
+
+- MCP targets run the official MCP conformance suite.
+- A2A targets run the official A2A validation/TCK tooling as available.
+- AXON consumes those results as prerequisites for higher-level assurance.
+
+### 6. Normalized Trace IR
 
 One event model for comparison:
 - goal/input;
@@ -119,18 +146,18 @@ One event model for comparison:
 
 Use OpenTelemetry IDs/semantics where practical rather than creating proprietary tracing infrastructure.
 
-### 6. AXON Assurance
+### 7. AXON Assurance
 
-Differentiate from generic LLM evaluation.
+Differentiate from generic LLM evaluation and protocol validation.
 
 Primary suites:
+- semantic equivalence across targets;
 - authority/capability preservation;
 - delegation attenuation;
 - approval replay/substitution;
-- MCP/A2A/WebMCP contract conformance;
 - checkpoint/retry duplicate-side-effect tests;
 - context/provenance integrity;
-- provider/runtime portability equivalence;
+- declared-loss detection;
 - cost/latency regression.
 
 ## Offline-first contract
@@ -161,6 +188,8 @@ axon portability --live --target openai
 - another generic agent chat framework;
 - proprietary A2A transport;
 - proprietary MCP replacement;
+- competing MCP/A2A protocol TCK;
+- generic portability file format as the product;
 - generic memory SaaS;
 - generic model gateway;
 - generic observability dashboard;
